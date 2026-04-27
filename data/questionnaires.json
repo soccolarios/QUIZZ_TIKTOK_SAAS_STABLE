@@ -1,0 +1,470 @@
+{
+  "meta": {
+    "version": 1,
+    "last_modified": "2026-04-10 07:55:30",
+    "next_questionnaire_id": 2,
+    "next_question_id": 31
+  },
+  "questionnaires": [
+    {
+      "id": 1,
+      "name": "Culture Generale",
+      "description": "Questions de culture generale variees",
+      "category": "general",
+      "active": true,
+      "order": 1,
+      "questions": [
+        {
+          "id": 1,
+          "text": "Quelle est la capitale de la France ?",
+          "type": "standard",
+          "choices": {
+            "A": "Lyon",
+            "B": "Paris",
+            "C": "Marseille",
+            "D": "Bordeaux"
+          },
+          "correct_answer": "B",
+          "category": "geographie",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 2,
+          "text": "Combien de continents y a-t-il sur Terre ?",
+          "type": "standard",
+          "choices": {
+            "A": "5",
+            "B": "6",
+            "C": "7",
+            "D": "8"
+          },
+          "correct_answer": "C",
+          "category": "geographie",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 3,
+          "text": "Quel est le plus grand ocean du monde ?",
+          "type": "standard",
+          "choices": {
+            "A": "Atlantique",
+            "B": "Indien",
+            "C": "Arctique",
+            "D": "Pacifique"
+          },
+          "correct_answer": "D",
+          "category": "geographie",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 4,
+          "text": "En quelle annee l'homme a-t-il marche sur la Lune pour la premiere fois ?",
+          "type": "standard",
+          "choices": {
+            "A": "1965",
+            "B": "1969",
+            "C": "1972",
+            "D": "1975"
+          },
+          "correct_answer": "B",
+          "category": "histoire",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 5,
+          "text": "Quel est l'element chimique le plus abondant dans l'univers ?",
+          "type": "standard",
+          "choices": {
+            "A": "Oxygene",
+            "B": "Carbone",
+            "C": "Helium",
+            "D": "Hydrogene"
+          },
+          "correct_answer": "D",
+          "category": "science",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 6,
+          "text": "Quelle planete est connue comme la planete rouge ?",
+          "type": "standard",
+          "choices": {
+            "A": "Venus",
+            "B": "Mars",
+            "C": "Jupiter",
+            "D": "Saturne"
+          },
+          "correct_answer": "B",
+          "category": "science",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 7,
+          "text": "Qui a peint la Joconde ?",
+          "type": "standard",
+          "choices": {
+            "A": "Michel-Ange",
+            "B": "Raphael",
+            "C": "Leonard de Vinci",
+            "D": "Botticelli"
+          },
+          "correct_answer": "C",
+          "category": "art",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 8,
+          "text": "Combien de joueurs y a-t-il dans une equipe de football sur le terrain ?",
+          "type": "standard",
+          "choices": {
+            "A": "9",
+            "B": "10",
+            "C": "11",
+            "D": "12"
+          },
+          "correct_answer": "C",
+          "category": "sport",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 9,
+          "text": "Quel pays a remporte la Coupe du Monde de football en 2018 ?",
+          "type": "standard",
+          "choices": {
+            "A": "Bresil",
+            "B": "Allemagne",
+            "C": "Croatie",
+            "D": "France"
+          },
+          "correct_answer": "D",
+          "category": "sport",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 10,
+          "text": "Quelle est la monnaie utilisee au Japon ?",
+          "type": "standard",
+          "choices": {
+            "A": "Won",
+            "B": "Yuan",
+            "C": "Yen",
+            "D": "Ringgit"
+          },
+          "correct_answer": "C",
+          "category": "geographie",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 11,
+          "text": "Quel est le plus long fleuve du monde ?",
+          "type": "standard",
+          "choices": {
+            "A": "Amazone",
+            "B": "Nil",
+            "C": "Yangtse",
+            "D": "Mississippi"
+          },
+          "correct_answer": "B",
+          "category": "geographie",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 12,
+          "text": "Combien d'os y a-t-il dans le corps humain adulte ?",
+          "type": "standard",
+          "choices": {
+            "A": "186",
+            "B": "206",
+            "C": "226",
+            "D": "246"
+          },
+          "correct_answer": "B",
+          "category": "science",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 13,
+          "text": "Quel animal est le symbole de la marque Lacoste ?",
+          "type": "standard",
+          "choices": {
+            "A": "Crocodile",
+            "B": "Serpent",
+            "C": "Lezard",
+            "D": "Tortue"
+          },
+          "correct_answer": "A",
+          "category": "culture",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 14,
+          "text": "Dans quel pays se trouve la tour de Pise ?",
+          "type": "standard",
+          "choices": {
+            "A": "Espagne",
+            "B": "France",
+            "C": "Italie",
+            "D": "Grece"
+          },
+          "correct_answer": "C",
+          "category": "geographie",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 15,
+          "text": "Quelle est la formule chimique de l'eau ?",
+          "type": "standard",
+          "choices": {
+            "A": "CO2",
+            "B": "H2O",
+            "C": "O2",
+            "D": "NaCl"
+          },
+          "correct_answer": "B",
+          "category": "science",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 16,
+          "text": "Qui a ecrit 'Les Miserables' ?",
+          "type": "standard",
+          "choices": {
+            "A": "Emile Zola",
+            "B": "Victor Hugo",
+            "C": "Gustave Flaubert",
+            "D": "Alexandre Dumas"
+          },
+          "correct_answer": "B",
+          "category": "litterature",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 17,
+          "text": "Quel est le plus grand pays du monde par superficie ?",
+          "type": "standard",
+          "choices": {
+            "A": "Canada",
+            "B": "Chine",
+            "C": "Etats-Unis",
+            "D": "Russie"
+          },
+          "correct_answer": "D",
+          "category": "geographie",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 18,
+          "text": "Combien de cordes a une guitare classique ?",
+          "type": "standard",
+          "choices": {
+            "A": "4",
+            "B": "5",
+            "C": "6",
+            "D": "7"
+          },
+          "correct_answer": "C",
+          "category": "musique",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 19,
+          "text": "Quel est le plus petit pays du monde ?",
+          "type": "standard",
+          "choices": {
+            "A": "Monaco",
+            "B": "Vatican",
+            "C": "Saint-Marin",
+            "D": "Liechtenstein"
+          },
+          "correct_answer": "B",
+          "category": "geographie",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 20,
+          "text": "En quelle annee a commence la Premiere Guerre mondiale ?",
+          "type": "standard",
+          "choices": {
+            "A": "1912",
+            "B": "1914",
+            "C": "1916",
+            "D": "1918"
+          },
+          "correct_answer": "B",
+          "category": "histoire",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 21,
+          "text": "Quel gaz les plantes absorbent-elles pendant la photosynthese ?",
+          "type": "standard",
+          "choices": {
+            "A": "Oxygene",
+            "B": "Azote",
+            "C": "Dioxyde de carbone",
+            "D": "Hydrogene"
+          },
+          "correct_answer": "C",
+          "category": "science",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 22,
+          "text": "Quelle est la langue la plus parlee dans le monde ?",
+          "type": "standard",
+          "choices": {
+            "A": "Anglais",
+            "B": "Espagnol",
+            "C": "Mandarin",
+            "D": "Hindi"
+          },
+          "correct_answer": "C",
+          "category": "culture",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 23,
+          "text": "Combien de vitamines existent officiellement ?",
+          "type": "standard",
+          "choices": {
+            "A": "10",
+            "B": "13",
+            "C": "15",
+            "D": "18"
+          },
+          "correct_answer": "B",
+          "category": "science",
+          "difficulty": 3,
+          "active": true
+        },
+        {
+          "id": 24,
+          "text": "Quel est l'animal terrestre le plus rapide ?",
+          "type": "standard",
+          "choices": {
+            "A": "Lion",
+            "B": "Guepard",
+            "C": "Antilope",
+            "D": "Autruche"
+          },
+          "correct_answer": "B",
+          "category": "animaux",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 25,
+          "text": "Dans quel pays se trouve le Machu Picchu ?",
+          "type": "standard",
+          "choices": {
+            "A": "Bolivie",
+            "B": "Colombie",
+            "C": "Perou",
+            "D": "Equateur"
+          },
+          "correct_answer": "C",
+          "category": "geographie",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 26,
+          "text": "Qui a invente le telephone ?",
+          "type": "standard",
+          "choices": {
+            "A": "Thomas Edison",
+            "B": "Alexander Graham Bell",
+            "C": "Nikola Tesla",
+            "D": "Guglielmo Marconi"
+          },
+          "correct_answer": "B",
+          "category": "histoire",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 27,
+          "text": "Quelle est la capitale de l'Australie ?",
+          "type": "standard",
+          "choices": {
+            "A": "Sydney",
+            "B": "Melbourne",
+            "C": "Canberra",
+            "D": "Perth"
+          },
+          "correct_answer": "C",
+          "category": "geographie",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 28,
+          "text": "Combien de dents a un adulte humain en moyenne ?",
+          "type": "standard",
+          "choices": {
+            "A": "28",
+            "B": "30",
+            "C": "32",
+            "D": "34"
+          },
+          "correct_answer": "C",
+          "category": "science",
+          "difficulty": 2,
+          "active": true
+        },
+        {
+          "id": 29,
+          "text": "Quel superheros est connu comme l'Homme Araignee ?",
+          "type": "standard",
+          "choices": {
+            "A": "Batman",
+            "B": "Spider-Man",
+            "C": "Superman",
+            "D": "Iron Man"
+          },
+          "correct_answer": "B",
+          "category": "culture",
+          "difficulty": 1,
+          "active": true
+        },
+        {
+          "id": 30,
+          "text": "Quelle mer borde la cote sud de la France ?",
+          "type": "standard",
+          "choices": {
+            "A": "Mer du Nord",
+            "B": "Mer Adriatique",
+            "C": "Mer Mediterranee",
+            "D": "Mer Baltique"
+          },
+          "correct_answer": "C",
+          "category": "geographie",
+          "difficulty": 1,
+          "active": true
+        }
+      ]
+    }
+  ]
+}

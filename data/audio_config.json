@@ -1,0 +1,79 @@
+{
+  "provider": "openai",
+  "language": "fr-FR",
+  "providers": {
+    "openai": {
+      "api_key": "",
+      "model": "tts-1",
+      "voice": "alloy",
+      "speed": 1.0
+    },
+    "elevenlabs": {
+      "api_key": "",
+      "voice_id": "",
+      "model_id": "eleven_multilingual_v2",
+      "stability": 0.5,
+      "similarity_boost": 0.75
+    },
+    "azure": {
+      "api_key": "",
+      "region": "westeurope",
+      "voice_name": "fr-FR-DeniseNeural"
+    }
+  },
+  "number_range": {
+    "start": 0,
+    "end": 100
+  },
+  "texts": {
+    "words": {
+      "question_numero": "Question numero",
+      "sur": "sur",
+      "vous_avez": "Vous avez",
+      "secondes": "secondes",
+      "la_bonne_reponse_etait": "La bonne reponse etait",
+      "les_gagnants_sont": "Les gagnants sont",
+      "le_gagnant_est": "Le gagnant est",
+      "aucun_gagnant": "Aucun gagnant pour cette question",
+      "le_plus_rapide": "Le joueur le plus rapide est",
+      "et": "et",
+      "autres_joueurs": "autres joueurs",
+      "prochaine_question_dans": "Prochaine question dans",
+      "felicitations": "Felicitations",
+      "nous_avons": "Nous avons",
+      "gagnants": "gagnants",
+      "top_cest_parti": "Top, c'est parti!"
+    },
+    "phrases": {
+      "intro": "Le quiz commence! Bonne chance a tous!",
+      "transition": "Prochain questionnaire",
+      "fin": "Fin du quiz! Merci d'avoir joue!",
+      "fin_gagnant": "Fin du quiz! Le grand gagnant est",
+      "x2_open": "Attention! C'est le moment du double ou rien! Tapez X2 dans le chat pour tenter de doubler vos points!",
+      "x2_nobody": "Personne n'a tente le double ou rien. On continue!",
+      "x2_registered": "Nous avons",
+      "x2_registered_suffix": "joueurs qui tentent",
+      "x2_registered_suffix2": "le double ou rien!",
+      "x2_success": "Bravo aux joueurs qui ont reussi le double ou rien! Leurs points sont doubles!",
+      "x2_fail": "Dommage! Les joueurs du double ou rien ont perdu leurs points sur cette question!"
+    }
+  },
+  "text_hashes": {},
+  "generation_status": {
+    "numbers": {
+      "generated": false,
+      "count": 0,
+      "last_generated": null
+    },
+    "words": {
+      "generated": false,
+      "count": 0,
+      "last_generated": null
+    },
+    "phrases": {
+      "generated": false,
+      "count": 0,
+      "last_generated": null
+    }
+  }
+}

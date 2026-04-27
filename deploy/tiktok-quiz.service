@@ -1,0 +1,27 @@
+[Unit]
+Description=TikTok Quiz - Admin Panel + WebSocket Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/tiktok-quiz
+ExecStart=/opt/tiktok-quiz/venv/bin/gunicorn \
+    --bind 127.0.0.1:5000 \
+    --workers 1 \
+    --threads 4 \
+    --worker-class gthread \
+    --timeout 120 \
+    --keep-alive 65 \
+    --access-logfile /var/log/tiktok-quiz/access.log \
+    --error-logfile /var/log/tiktok-quiz/error.log \
+    "admin_panel.app:create_app()"
+Restart=always
+RestartSec=5
+EnvironmentFile=-/etc/tiktok-quiz/env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/tiktok-quiz/backend
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,72 @@
+{
+  "_comment": "Fichier de configuration central - Tous les timings du jeu (en secondes sauf indication contraire)",
+
+  "game": {
+    "question_time": 20,
+    "countdown_time": 5,
+    "base_points": 100,
+    "speed_bonus_max": 50,
+    "min_answer_delay": 1.0,
+    "tiktok_delay": 4,
+    "result_display_duration": 10,
+    "leaderboard_display_duration": 3,
+    "post_start_delay": 3,
+    "post_countdown_delay": 0.1,
+    "auto_start_delay": 0,
+    "questionnaire_transition_duration": 8,
+    "x2_enabled": false,
+    "x2_frequency": 3,
+    "x2_max_displayed": 10
+  },
+
+  "x2": {
+    "enabled": false,
+    "frequency": 3,
+    "frequency_random_min": 2,
+    "frequency_random_max": 5,
+    "open_duration_min": 15.0,
+    "collection_extra_time": 5.0,
+    "show_duration_min": 5.0,
+    "result_display_duration": 5.0
+  },
+
+  "websocket": {
+    "host": "0.0.0.0",
+    "port": 8765,
+    "ping_interval": 20,
+    "ping_timeout": 10
+  },
+
+  "overlay": {
+    "min_result_duration_ms": 3000,
+    "min_leaderboard_duration_ms": 3000,
+    "reconnect_delay_ms": 500,
+    "max_reconnect_attempts": 30,
+    "winner_pill_animation_base_delay": 0.2,
+    "winner_pill_animation_step": 0.05,
+    "leaderboard_item_animation_step": 0.06
+  },
+
+  "tiktok": {
+    "connection_timeout": 15,
+    "simulation_min_delay": 0.5,
+    "simulation_max_delay": 2.0
+  },
+
+  "tts": {
+    "rate": 180,
+    "volume": 1.0,
+    "queue_timeout": 1,
+    "thread_join_timeout": 2
+  },
+
+  "audio": {
+    "default_volume": 0.5,
+    "cooldown_ms": 100
+  },
+
+  "audio_tts": {
+    "prefer_pregenerated": true,
+    "sequence_gap_ms": 50
+  }
+}

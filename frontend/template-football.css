@@ -1,0 +1,1595 @@
+/* =============================================================================
+   FOOTBALL TEMPLATE - PREMIUM BROADCAST EDITION
+   Next-gen football broadcast / FIFA / EA Sports / PlayStation inspired overlay
+   All selectors scoped under [data-template="football"]
+   ============================================================================= */
+
+
+/* ---------------------------------------------------------------------------
+   1. DESIGN TOKENS - Premium broadcast palette
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] {
+    --primary: #00e676;
+    --primary-light: #69f0ae;
+    --secondary: #b2ff59;
+    --accent: #00bfa5;
+    --accent-light: #1de9b6;
+    --dark: #0a1a0f;
+    --darker: #030a06;
+    --card: rgba(6, 22, 12, 0.92);
+    --card-border: rgba(0, 230, 118, 0.14);
+    --glass: rgba(0, 230, 118, 0.04);
+    --success: #00e676;
+    --warning: #ffd740;
+    --gold: #ffd740;
+    --silver: #b8c5d0;
+    --bronze: #cd7f32;
+    --light: #ffffff;
+    --light-dim: rgba(255, 255, 255, 0.72);
+    --fb-neon: #00ff88;
+    --fb-neon-dim: rgba(0, 255, 136, 0.15);
+    --fb-pitch: #0d3320;
+    --fb-pitch-deep: #061a10;
+    --fb-lime: #c6ff00;
+    --fb-cyan: #00e5ff;
+    --fb-glow: rgba(0, 230, 118, 0.35);
+    --fb-broadcast-accent: rgba(0, 255, 136, 0.65);
+    --fb-panel-bg: linear-gradient(165deg, rgba(4, 18, 10, 0.97), rgba(2, 12, 6, 0.94));
+    --fb-panel-border: rgba(0, 255, 136, 0.18);
+    --fb-depth-shadow: 0 35px 100px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 255, 136, 0.06) inset;
+}
+
+
+/* ---------------------------------------------------------------------------
+   2. KEYFRAMES - All football-specific animations
+   --------------------------------------------------------------------------- */
+
+@keyframes fb-field-lines {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 180px; }
+}
+
+@keyframes fb-stadium-glow {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.55; }
+}
+
+@keyframes fb-flood-flicker {
+    0%, 100% { filter: blur(100px) brightness(1); }
+    30% { filter: blur(100px) brightness(1.06); }
+    32% { filter: blur(100px) brightness(0.93); }
+    34% { filter: blur(100px) brightness(1.03); }
+    50% { filter: blur(100px) brightness(1); }
+    80% { filter: blur(100px) brightness(1.04); }
+    82% { filter: blur(100px) brightness(0.95); }
+}
+
+@keyframes fb-orb-intensity {
+    0%, 100% { filter: blur(80px) brightness(1); }
+    50% { filter: blur(80px) brightness(1.3); }
+}
+
+@keyframes fb-haze-drift {
+    0%, 100% { transform: translateX(0) translateY(0); opacity: 0.25; }
+    25% { transform: translateX(50px) translateY(-20px); opacity: 0.45; }
+    50% { transform: translateX(-30px) translateY(15px); opacity: 0.3; }
+    75% { transform: translateX(40px) translateY(25px); opacity: 0.5; }
+}
+
+@keyframes fb-energy-sweep {
+    0% { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
+    15% { opacity: 0.7; }
+    85% { opacity: 0.7; }
+    100% { transform: translateX(220%) skewX(-20deg); opacity: 0; }
+}
+
+@keyframes fb-glow-breathe {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.75; transform: scale(1.05); }
+}
+
+@keyframes fb-panel-enter {
+    0% { opacity: 0; transform: translateY(30px) scale(0.94); filter: blur(4px); }
+    50% { transform: translateY(-4px) scale(1.01); filter: blur(0px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+}
+
+@keyframes fb-neon-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 15px rgba(0, 255, 136, 0.12),
+            0 0 35px rgba(0, 255, 136, 0.06),
+            inset 0 1px 0 rgba(0, 255, 136, 0.06);
+    }
+    50% {
+        box-shadow:
+            0 0 30px rgba(0, 255, 136, 0.25),
+            0 0 60px rgba(0, 255, 136, 0.12),
+            inset 0 1px 0 rgba(0, 255, 136, 0.12);
+    }
+}
+
+@keyframes fb-border-glow {
+    0%, 100% { border-color: rgba(0, 255, 136, 0.12); }
+    50% { border-color: rgba(0, 255, 136, 0.35); }
+}
+
+@keyframes fb-shimmer-fast {
+    0% { background-position: -200% 0; }
+    100% { background-position: 300% 0; }
+}
+
+@keyframes fb-score-flash {
+    0% { text-shadow: 0 0 0 transparent; }
+    50% { text-shadow: 0 0 25px rgba(178, 255, 89, 0.7), 0 0 50px rgba(178, 255, 89, 0.35); }
+    100% { text-shadow: 0 0 0 transparent; }
+}
+
+@keyframes fb-broadcast-scan {
+    0% { transform: translateY(-100%); opacity: 0; }
+    5% { opacity: 0.4; }
+    95% { opacity: 0.4; }
+    100% { transform: translateY(2000px); opacity: 0; }
+}
+
+@keyframes fb-ticker-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes fb-hud-corner-flash {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+@keyframes fb-reveal-scale {
+    0% { opacity: 0; transform: scale(0.88) translateY(35px); filter: blur(6px); }
+    40% { filter: blur(0px); }
+    60% { transform: scale(1.02) translateY(-5px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+}
+
+@keyframes fb-timer-tension {
+    0%, 100% { filter: drop-shadow(0 0 25px rgba(255, 82, 82, 0.9)) drop-shadow(0 0 50px rgba(255, 82, 82, 0.4)); }
+    50% { filter: drop-shadow(0 0 40px rgba(255, 82, 82, 1)) drop-shadow(0 0 80px rgba(255, 82, 82, 0.6)); }
+}
+
+@keyframes fb-float-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+@keyframes fb-broadcast-line-pulse {
+    0%, 100% { opacity: 0.3; width: 60%; }
+    50% { opacity: 0.8; width: 90%; }
+}
+
+@keyframes fb-choice-reveal {
+    0% { opacity: 0; transform: translateX(-40px) scale(0.95); }
+    60% { transform: translateX(4px) scale(1.01); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   3. SCENE BASE - Stadium Night Atmosphere (deep 3D layers)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .scene-gradient-1 {
+    background:
+        radial-gradient(ellipse 130% 70% at 50% -10%, rgba(0, 255, 136, 0.22) 0%, transparent 50%),
+        radial-gradient(ellipse 90% 55% at 10% 100%, rgba(0, 191, 165, 0.14) 0%, transparent 50%),
+        radial-gradient(ellipse 90% 55% at 90% 100%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 110% 45% at 50% 110%, rgba(0, 230, 118, 0.12) 0%, transparent 55%),
+        linear-gradient(180deg,
+            #010d06 0%,
+            #021a0b 8%,
+            #03200f 18%,
+            #042a14 30%,
+            #032010 48%,
+            #021a0c 62%,
+            #011208 78%,
+            #010d06 100%
+        );
+}
+
+[data-template="football"] .scene-gradient-2 {
+    background:
+        radial-gradient(circle 750px at 50% 12%, rgba(0, 255, 136, 0.12) 0%, transparent 100%),
+        radial-gradient(circle 550px at 10% 55%, rgba(0, 191, 165, 0.08) 0%, transparent 100%),
+        radial-gradient(circle 550px at 90% 55%, rgba(0, 229, 255, 0.05) 0%, transparent 100%),
+        radial-gradient(circle 650px at 50% 90%, rgba(178, 255, 89, 0.06) 0%, transparent 100%);
+}
+
+[data-template="football"] .scene-gradient-3 {
+    background:
+        conic-gradient(from 220deg at 50% 50%,
+            transparent 0deg,
+            rgba(0, 255, 136, 0.03) 40deg,
+            transparent 80deg,
+            rgba(0, 191, 165, 0.025) 140deg,
+            transparent 200deg,
+            rgba(178, 255, 89, 0.018) 280deg,
+            transparent 360deg
+        );
+}
+
+
+/* ---------------------------------------------------------------------------
+   4. DEPTH ORBS - Stadium light pools (stronger volumetric feel)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .depth-orb-1 {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.40) 0%, rgba(0, 255, 136, 0.12) 30%, transparent 60%);
+    animation: orb-drift-1 25s ease-in-out infinite, fb-orb-intensity 8s ease-in-out infinite;
+}
+
+[data-template="football"] .depth-orb-2 {
+    background: radial-gradient(circle, rgba(0, 191, 165, 0.35) 0%, rgba(0, 191, 165, 0.12) 30%, transparent 60%);
+    animation: orb-drift-2 30s ease-in-out infinite, fb-orb-intensity 10s ease-in-out infinite 2s;
+}
+
+[data-template="football"] .depth-orb-3 {
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.25) 0%, rgba(0, 229, 255, 0.08) 30%, transparent 60%);
+    animation: orb-drift-3 20s ease-in-out infinite, fb-orb-intensity 12s ease-in-out infinite 4s;
+}
+
+[data-template="football"] .depth-orb-4 {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.28) 0%, rgba(0, 255, 136, 0.08) 30%, transparent 60%);
+}
+
+[data-template="football"] .depth-orb-5 {
+    background: radial-gradient(circle, rgba(178, 255, 89, 0.30) 0%, rgba(178, 255, 89, 0.10) 30%, transparent 60%);
+}
+
+[data-template="football"] .depth-orb-6 {
+    background: radial-gradient(circle, rgba(0, 191, 165, 0.22) 0%, rgba(0, 191, 165, 0.06) 30%, transparent 60%);
+}
+
+
+/* ---------------------------------------------------------------------------
+   5. GRID - Pitch marking lines (broadcast overlay feel)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .perspective-grid {
+    background-image:
+        linear-gradient(rgba(0, 255, 136, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.035) 1px, transparent 1px);
+    background-size: 90px 90px;
+    mask-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 25%, rgba(0,0,0,0.10) 55%, rgba(0,0,0,0.02) 100%);
+}
+
+
+/* ---------------------------------------------------------------------------
+   6. LIGHT BEAMS - Stronger stadium floodlights
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .light-beam-1 {
+    width: 450px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 255, 136, 0.04) 15%,
+        rgba(0, 255, 136, 0.12) 42%,
+        rgba(0, 255, 136, 0.15) 50%,
+        rgba(0, 255, 136, 0.12) 58%,
+        rgba(0, 255, 136, 0.04) 85%,
+        transparent 100%
+    );
+    filter: blur(1px);
+}
+
+[data-template="football"] .light-beam-2 {
+    width: 320px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(178, 255, 89, 0.03) 15%,
+        rgba(178, 255, 89, 0.10) 50%,
+        rgba(178, 255, 89, 0.03) 85%,
+        transparent 100%
+    );
+    filter: blur(1px);
+}
+
+[data-template="football"] .light-beam-3 {
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(0, 229, 255, 0.18) 35%,
+        rgba(0, 229, 255, 0.30) 50%,
+        rgba(0, 229, 255, 0.18) 65%,
+        transparent 100%
+    );
+    filter: blur(3px);
+}
+
+
+/* ---------------------------------------------------------------------------
+   7. SPOTLIGHTS - Volumetric stadium floods with flicker
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .spotlight-top {
+    background: radial-gradient(ellipse 100% 60%, rgba(255, 255, 255, 0.07) 0%, rgba(0, 255, 136, 0.18) 20%, transparent 65%);
+    animation: spotlight-pulse 6s ease-in-out infinite, fb-flood-flicker 15s ease-in-out infinite;
+}
+
+[data-template="football"] .spotlight-left {
+    background: radial-gradient(ellipse 70% 80%, rgba(0, 191, 165, 0.16) 0%, transparent 65%);
+    animation: spotlight-pulse 8s ease-in-out infinite 1s;
+}
+
+[data-template="football"] .spotlight-right {
+    background: radial-gradient(ellipse 70% 80%, rgba(0, 229, 255, 0.12) 0%, transparent 65%);
+    animation: spotlight-pulse 10s ease-in-out infinite 3s;
+}
+
+
+/* ---------------------------------------------------------------------------
+   8. PARTICLES - Stadium dust & light motes (brighter, more visible)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .floating-particle {
+    background: rgba(0, 255, 136, 0.95);
+    box-shadow: 0 0 14px rgba(0, 255, 136, 0.8), 0 0 32px rgba(0, 255, 136, 0.45), 0 0 60px rgba(0, 255, 136, 0.18);
+    width: 5px;
+    height: 5px;
+}
+
+[data-template="football"] .fp-2,
+[data-template="football"] .fp-6 {
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 0 0 24px rgba(255, 255, 255, 0.25);
+}
+
+[data-template="football"] .fp-5 {
+    background: rgba(178, 255, 89, 0.95);
+    box-shadow: 0 0 14px rgba(178, 255, 89, 0.8), 0 0 32px rgba(178, 255, 89, 0.45);
+}
+
+[data-template="football"] .fp-7,
+[data-template="football"] .fp-11 {
+    background: rgba(0, 229, 255, 0.85);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.7), 0 0 32px rgba(0, 229, 255, 0.35);
+    width: 4px;
+    height: 4px;
+}
+
+[data-template="football"] .fp-10 {
+    background: rgba(255, 215, 64, 0.95);
+    box-shadow: 0 0 14px rgba(255, 215, 64, 0.8), 0 0 32px rgba(255, 215, 64, 0.45);
+}
+
+[data-template="football"] .fp-9,
+[data-template="football"] .fp-12 {
+    width: 3px;
+    height: 3px;
+    background: rgba(0, 255, 136, 0.65);
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.5), 0 0 18px rgba(0, 255, 136, 0.25);
+}
+
+
+/* ---------------------------------------------------------------------------
+   9. AMBIANCE - Stadium haze & atmosphere (deeper layers)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .ambient-glow-top {
+    height: 550px;
+    background: linear-gradient(180deg,
+        rgba(0, 255, 136, 0.12) 0%,
+        rgba(0, 191, 165, 0.06) 20%,
+        rgba(0, 229, 255, 0.03) 45%,
+        transparent 100%
+    );
+}
+
+[data-template="football"] .ambient-glow-bottom {
+    height: 650px;
+    background: linear-gradient(0deg,
+        rgba(0, 230, 118, 0.10) 0%,
+        rgba(178, 255, 89, 0.05) 25%,
+        rgba(0, 255, 136, 0.02) 55%,
+        transparent 100%
+    );
+}
+
+[data-template="football"] .pulse-ring-1 {
+    border-color: rgba(0, 255, 136, 0.22);
+    border-width: 2px;
+}
+
+[data-template="football"] .pulse-ring-2 {
+    border-color: rgba(0, 229, 255, 0.14);
+    border-width: 2px;
+}
+
+[data-template="football"] .scan-line {
+    height: 5px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 255, 136, 0.12) 10%,
+        rgba(0, 255, 136, 0.45) 35%,
+        rgba(0, 255, 136, 0.7) 50%,
+        rgba(0, 255, 136, 0.45) 65%,
+        rgba(0, 255, 136, 0.12) 90%,
+        transparent 100%
+    );
+    box-shadow:
+        0 0 20px rgba(0, 255, 136, 0.5),
+        0 0 50px rgba(0, 255, 136, 0.25),
+        0 0 100px rgba(0, 255, 136, 0.10);
+}
+
+
+/* ---------------------------------------------------------------------------
+   10. FRAME - HUD broadcast frame (stronger corners, broadcast lines)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .frame-tl {
+    border-top: 3px solid rgba(0, 255, 136, 0.6);
+    border-left: 3px solid rgba(0, 255, 136, 0.6);
+    box-shadow: -3px -3px 20px rgba(0, 255, 136, 0.2), inset 5px 5px 15px rgba(0, 255, 136, 0.05);
+    animation: fb-hud-corner-flash 4s ease-in-out infinite;
+}
+
+[data-template="football"] .frame-tr {
+    border-top: 3px solid rgba(178, 255, 89, 0.5);
+    border-right: 3px solid rgba(178, 255, 89, 0.5);
+    box-shadow: 3px -3px 20px rgba(178, 255, 89, 0.15), inset -5px 5px 15px rgba(178, 255, 89, 0.04);
+    animation: fb-hud-corner-flash 4s ease-in-out infinite 1s;
+}
+
+[data-template="football"] .frame-bl {
+    border-bottom: 3px solid rgba(0, 229, 255, 0.45);
+    border-left: 3px solid rgba(0, 229, 255, 0.45);
+    box-shadow: -3px 3px 20px rgba(0, 229, 255, 0.12), inset 5px -5px 15px rgba(0, 229, 255, 0.04);
+    animation: fb-hud-corner-flash 4s ease-in-out infinite 2s;
+}
+
+[data-template="football"] .frame-br {
+    border-bottom: 3px solid rgba(0, 255, 136, 0.6);
+    border-right: 3px solid rgba(0, 255, 136, 0.6);
+    box-shadow: 3px 3px 20px rgba(0, 255, 136, 0.2), inset -5px -5px 15px rgba(0, 255, 136, 0.05);
+    animation: fb-hud-corner-flash 4s ease-in-out infinite 3s;
+}
+
+[data-template="football"] .frame-line-top {
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.6), transparent);
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.2);
+    height: 2px;
+    animation: fb-broadcast-line-pulse 5s ease-in-out infinite;
+}
+
+[data-template="football"] .frame-line-bottom {
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.45), transparent);
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.12);
+    height: 2px;
+    animation: fb-broadcast-line-pulse 5s ease-in-out infinite 2.5s;
+}
+
+[data-template="football"] .frame-accent-left {
+    background: linear-gradient(180deg, transparent, rgba(0, 191, 165, 0.4), transparent);
+    width: 3px;
+}
+
+[data-template="football"] .frame-accent-right {
+    background: linear-gradient(180deg, transparent, rgba(0, 255, 136, 0.4), transparent);
+    width: 3px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   11. LIVE INDICATOR - Match broadcast badge (glowing broadcast feel)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .live-indicator {
+    background: rgba(0, 255, 136, 0.10);
+    border: 2px solid rgba(0, 255, 136, 0.55);
+    box-shadow:
+        0 0 25px rgba(0, 255, 136, 0.15),
+        0 8px 30px rgba(0, 0, 0, 0.3),
+        inset 0 0 15px rgba(0, 255, 136, 0.05);
+}
+
+[data-template="football"] .live-dot {
+    background: #00ff88;
+    box-shadow: 0 0 10px #00ff88, 0 0 22px rgba(0, 255, 136, 0.7);
+}
+
+[data-template="football"] .live-text {
+    color: #00ff88;
+    text-shadow: 0 0 12px rgba(0, 255, 136, 0.6);
+}
+
+
+/* ---------------------------------------------------------------------------
+   12. VIGNETTE - Stadium depth (stronger edges)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .scene-vignette {
+    background: radial-gradient(ellipse 72% 62% at 50% 50%, transparent 0%, transparent 40%, rgba(1, 8, 4, 0.85) 100%);
+}
+
+
+/* ---------------------------------------------------------------------------
+   13. STADIUM OVERLAY EFFECTS (pseudo-elements for depth)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .scene-base::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 88px,
+            rgba(0, 255, 136, 0.02) 88px,
+            rgba(0, 255, 136, 0.02) 90px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 268px,
+            rgba(0, 255, 136, 0.012) 268px,
+            rgba(0, 255, 136, 0.012) 270px
+        );
+    animation: fb-field-lines 18s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+[data-template="football"] .scene-lights::after {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: 3%;
+    width: 94%;
+    height: 40%;
+    background:
+        radial-gradient(ellipse 35% 100% at 15% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 30% 100% at 50% 0%, rgba(255, 255, 255, 0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 35% 100% at 85% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+    animation: fb-stadium-glow 5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+[data-template="football"] .scene-lights::before {
+    content: '';
+    position: absolute;
+    bottom: -5%;
+    left: 5%;
+    width: 90%;
+    height: 28%;
+    background:
+        radial-gradient(ellipse 85% 65% at 50% 100%, rgba(0, 255, 136, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 45% at 25% 90%, rgba(0, 191, 165, 0.05) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 45% at 75% 90%, rgba(178, 255, 89, 0.05) 0%, transparent 55%);
+    animation: fb-stadium-glow 7s ease-in-out infinite 2s;
+    pointer-events: none;
+}
+
+[data-template="football"] .scene-depth::after {
+    content: '';
+    position: absolute;
+    top: 8%;
+    left: -5%;
+    width: 110%;
+    height: 84%;
+    background:
+        radial-gradient(ellipse 65% 22% at 50% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 100%);
+    animation: fb-haze-drift 30s ease-in-out infinite;
+    pointer-events: none;
+    filter: blur(60px);
+}
+
+
+/* ---------------------------------------------------------------------------
+   14. BROADCAST HUD SCAN LINE (additional depth layer via scene-grid)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .scene-grid::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 255, 136, 0.08) 15%,
+        rgba(0, 255, 136, 0.25) 40%,
+        rgba(0, 255, 136, 0.35) 50%,
+        rgba(0, 255, 136, 0.25) 60%,
+        rgba(0, 255, 136, 0.08) 85%,
+        transparent 100%
+    );
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    animation: fb-broadcast-scan 20s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+
+/* ---------------------------------------------------------------------------
+   15. SCREEN BASE - All screens get broadcast panel treatment
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .screen {
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+
+/* ---------------------------------------------------------------------------
+   16. WAITING SCREEN - Pre-match broadcast intro
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .waiting-title {
+    background: linear-gradient(135deg, #00ff88, #b2ff59, #00e5ff, #00ff88);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 5s ease infinite;
+    filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.35));
+}
+
+[data-template="football"] .waiting-subtitle {
+    color: rgba(255, 255, 255, 0.55);
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+}
+
+[data-template="football"] .logo-pulse {
+    background: linear-gradient(135deg, #00e676, #00bfa5);
+    box-shadow:
+        0 0 45px rgba(0, 255, 136, 0.5),
+        0 0 90px rgba(0, 255, 136, 0.2),
+        0 0 150px rgba(0, 255, 136, 0.08);
+    animation: glow-pulse 2.5s ease-in-out infinite;
+}
+
+[data-template="football"] .logo-ring-outer {
+    border-color: #00ff88;
+    border-top-color: transparent;
+    border-right-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.5));
+}
+
+[data-template="football"] .logo-ring-inner {
+    border-color: #b2ff59;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(178, 255, 89, 0.4));
+}
+
+[data-template="football"] .connecting-bar {
+    background: linear-gradient(90deg, #00e676, #b2ff59, #00e5ff);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+}
+
+[data-template="football"] .connecting-indicator {
+    background: rgba(0, 255, 136, 0.08);
+}
+
+
+/* ---------------------------------------------------------------------------
+   17. STARTING SCREEN - Kick-off broadcast
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .starting-ring-1 {
+    border-color: rgba(0, 255, 136, 0.35);
+    filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.25));
+}
+
+[data-template="football"] .starting-ring-2 {
+    border-color: rgba(178, 255, 89, 0.3);
+    filter: drop-shadow(0 0 8px rgba(178, 255, 89, 0.2));
+}
+
+[data-template="football"] .starting-ring-3 {
+    border-color: rgba(0, 229, 255, 0.25);
+    filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.2));
+}
+
+[data-template="football"] .starting-icon {
+    filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.7)) drop-shadow(0 0 60px rgba(0, 255, 136, 0.35));
+}
+
+[data-template="football"] .starting-title {
+    background: linear-gradient(135deg, #00ff88, #b2ff59);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease infinite;
+    filter: drop-shadow(0 0 25px rgba(0, 255, 136, 0.45));
+}
+
+[data-template="football"] .starting-progress {
+    background: rgba(0, 255, 136, 0.08);
+}
+
+[data-template="football"] .starting-progress-bar {
+    background: linear-gradient(90deg, #00e676, #b2ff59, #00e676);
+    box-shadow: 0 0 18px rgba(0, 255, 136, 0.5);
+}
+
+
+/* ---------------------------------------------------------------------------
+   18. QUESTION SCREEN - Match Play (broadcast HUD)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .question-badge {
+    background: linear-gradient(135deg, rgba(4, 18, 10, 0.95), rgba(0, 255, 136, 0.12));
+    border: 2px solid rgba(0, 255, 136, 0.35);
+    box-shadow:
+        0 15px 50px rgba(0, 0, 0, 0.45),
+        0 0 35px rgba(0, 255, 136, 0.12),
+        inset 0 1px 0 rgba(0, 255, 136, 0.10);
+    animation: fb-neon-pulse 4s ease-in-out infinite;
+}
+
+[data-template="football"] .badge-label {
+    color: #69f0ae;
+    letter-spacing: 5px;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.35);
+}
+
+[data-template="football"] .question-number {
+    text-shadow: 0 0 18px rgba(0, 255, 136, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   19. TIMER - Match clock (heroic, central, intense)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .timer-glow {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.50) 0%, rgba(0, 255, 136, 0.12) 35%, transparent 60%);
+    width: 220px;
+    height: 220px;
+}
+
+[data-template="football"] .timer-progress {
+    stroke: #00ff88;
+    filter: drop-shadow(0 0 16px rgba(0, 255, 136, 0.85)) drop-shadow(0 0 35px rgba(0, 255, 136, 0.35));
+}
+
+[data-template="football"] .timer-progress.warning {
+    stroke: #ffd740;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 64, 0.9)) drop-shadow(0 0 40px rgba(255, 215, 64, 0.35));
+}
+
+[data-template="football"] .timer-progress.danger {
+    stroke: #ff5252;
+    animation: fb-timer-tension 0.6s ease-in-out infinite;
+}
+
+[data-template="football"] .timer-bg {
+    stroke: rgba(0, 255, 136, 0.08);
+}
+
+[data-template="football"] .timer-value {
+    text-shadow: 0 0 25px rgba(0, 255, 136, 0.35);
+}
+
+[data-template="football"] .timer-label {
+    color: #b2ff59;
+    text-shadow: 0 0 10px rgba(178, 255, 89, 0.45);
+}
+
+
+/* ---------------------------------------------------------------------------
+   20. QUESTION CARD - Broadcast tactical board (3D floating panel)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .question-card {
+    background: var(--fb-panel-bg);
+    border: 1px solid var(--fb-panel-border);
+    border-radius: 35px;
+    box-shadow:
+        var(--fb-depth-shadow),
+        0 0 80px rgba(0, 255, 136, 0.05),
+        0 0 160px rgba(0, 191, 165, 0.03);
+    animation: fb-reveal-scale 0.5s ease-out;
+}
+
+[data-template="football"] .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
+    z-index: 2;
+}
+
+[data-template="football"] .card-border {
+    height: 4px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #00e676 8%,
+        #b2ff59 25%,
+        #00ff88 50%,
+        #b2ff59 75%,
+        #00e676 92%,
+        transparent 100%
+    );
+    opacity: 0.9;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5), 0 0 40px rgba(0, 255, 136, 0.2);
+}
+
+[data-template="football"] .card-shine {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 255, 136, 0.10),
+        rgba(178, 255, 89, 0.06),
+        transparent
+    );
+}
+
+
+/* ---------------------------------------------------------------------------
+   21. CHOICES - Player action buttons (video game selectable panels)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .choice {
+    animation: fb-choice-reveal 0.4s ease-out backwards;
+}
+
+[data-template="football"] .choice:nth-child(1) { animation-delay: 0.05s; }
+[data-template="football"] .choice:nth-child(2) { animation-delay: 0.12s; }
+[data-template="football"] .choice:nth-child(3) { animation-delay: 0.19s; }
+[data-template="football"] .choice:nth-child(4) { animation-delay: 0.26s; }
+
+[data-template="football"] .choice-letter {
+    background: linear-gradient(145deg, #00e676, #009d5a);
+    border-radius: 18px;
+    box-shadow:
+        0 10px 30px rgba(0, 230, 118, 0.4),
+        inset 0 2px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+[data-template="football"] .choice-content {
+    background: var(--fb-panel-bg);
+    border: 1px solid rgba(0, 255, 136, 0.10);
+    border-radius: 24px;
+    box-shadow:
+        0 15px 50px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(0, 255, 136, 0.05);
+    transition: all 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+[data-template="football"] .choice-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    width: 80%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.12), transparent);
+    pointer-events: none;
+}
+
+[data-template="football"] .choice.correct .choice-content {
+    border-color: #00ff88;
+    transform: scale(1.02);
+    box-shadow:
+        0 0 50px rgba(0, 255, 136, 0.3),
+        0 0 100px rgba(0, 255, 136, 0.12),
+        0 20px 60px rgba(0, 0, 0, 0.3),
+        inset 0 0 35px rgba(0, 255, 136, 0.08);
+}
+
+[data-template="football"] .choice.correct .choice-letter {
+    background: linear-gradient(145deg, #00ff88, #00c853);
+    box-shadow:
+        0 10px 35px rgba(0, 255, 136, 0.55),
+        0 0 20px rgba(0, 255, 136, 0.35),
+        inset 0 2px 0 rgba(255, 255, 255, 0.25);
+}
+
+[data-template="football"] .choice.correct .choice-glow {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.18), rgba(0, 255, 136, 0.04));
+    box-shadow: inset 0 0 60px rgba(0, 255, 136, 0.18);
+}
+
+[data-template="football"] .choice.incorrect .choice-content {
+    opacity: 0.4;
+    border-color: rgba(255, 82, 82, 0.2);
+    filter: saturate(0.5);
+}
+
+[data-template="football"] .choice-bar {
+    background: rgba(0, 255, 136, 0.06);
+}
+
+[data-template="football"] .choice-bar-fill {
+    background: linear-gradient(90deg, #00e676, #b2ff59);
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.35);
+}
+
+[data-template="football"] .choice-percent {
+    color: #b2ff59;
+    text-shadow: 0 0 10px rgba(178, 255, 89, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   22. ANSWER COUNTER - Match stats HUD bar
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .answer-counter {
+    background: var(--fb-panel-bg);
+    border: 1px solid rgba(0, 255, 136, 0.14);
+    box-shadow:
+        0 15px 50px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(0, 255, 136, 0.05);
+}
+
+[data-template="football"] .count-value {
+    color: #b2ff59;
+    text-shadow: 0 0 12px rgba(178, 255, 89, 0.45);
+}
+
+[data-template="football"] .counter-icon {
+    color: #69f0ae;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.35));
+}
+
+
+/* ---------------------------------------------------------------------------
+   23. MINI LEADERBOARD - Broadcast scoreboard (floating HUD module)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .mini-leaderboard {
+    background: var(--fb-panel-bg);
+    border: 1px solid var(--fb-panel-border);
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.55),
+        0 0 40px rgba(0, 255, 136, 0.06),
+        inset 0 1px 0 rgba(0, 255, 136, 0.06);
+    animation: slide-in-right 0.4s ease 0.15s backwards, fb-neon-pulse 6s ease-in-out infinite 1s;
+}
+
+[data-template="football"] .mini-leaderboard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.45), transparent);
+    z-index: 1;
+}
+
+[data-template="football"] .mini-lb-header {
+    background: linear-gradient(135deg, rgba(255, 215, 64, 0.12), rgba(0, 255, 136, 0.08));
+    border-bottom: 1px solid rgba(0, 255, 136, 0.12);
+}
+
+[data-template="football"] .mini-lb-title {
+    color: #ffd740;
+    text-shadow: 0 0 12px rgba(255, 215, 64, 0.35);
+}
+
+[data-template="football"] .mini-score {
+    color: #b2ff59;
+    text-shadow: 0 0 8px rgba(178, 255, 89, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   24. CTA COMMENT BLOCK - Broadcast call-to-action panel
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .cta-content {
+    background: var(--fb-panel-bg);
+    border: 1px solid rgba(0, 255, 136, 0.22);
+    border-radius: 26px;
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.50),
+        0 0 35px rgba(0, 255, 136, 0.08),
+        inset 0 1px 0 rgba(0, 255, 136, 0.08);
+}
+
+[data-template="football"] .cta-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.4), transparent);
+}
+
+[data-template="football"] .cta-glow {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.12) 0%, transparent 55%);
+}
+
+[data-template="football"] .cta-chat-icon {
+    color: #69f0ae;
+    filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.55));
+}
+
+[data-template="football"] .cta-letter-chip {
+    background: linear-gradient(145deg, #00e676, #009d5a);
+    box-shadow:
+        0 8px 22px rgba(0, 230, 118, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+[data-template="football"] .cta-main-text {
+    text-shadow: 0 0 18px rgba(0, 255, 136, 0.25);
+}
+
+
+/* ---------------------------------------------------------------------------
+   25. RESULT SCREEN - Post-match broadcast reveal
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .banner-glow {
+    background: radial-gradient(ellipse, rgba(0, 255, 136, 0.35) 0%, rgba(0, 230, 118, 0.10) 35%, transparent 55%);
+}
+
+[data-template="football"] .banner-title {
+    text-shadow:
+        0 0 35px rgba(0, 255, 136, 0.55),
+        0 0 70px rgba(0, 255, 136, 0.25),
+        0 3px 6px rgba(0, 0, 0, 0.6);
+}
+
+[data-template="football"] .celebration-burst {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.50) 0%, rgba(0, 255, 136, 0.12) 35%, transparent 60%);
+}
+
+[data-template="football"] .celebration-rays {
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(0, 255, 136, 0.10) 8deg,
+        transparent 16deg,
+        rgba(178, 255, 89, 0.07) 24deg,
+        transparent 32deg,
+        rgba(0, 229, 255, 0.05) 40deg,
+        transparent 48deg
+    );
+}
+
+[data-template="football"] .showcase-answer {
+    background: linear-gradient(145deg, rgba(0, 255, 136, 0.16), rgba(0, 255, 136, 0.05));
+    border: 3px solid #00ff88;
+    box-shadow:
+        0 35px 110px rgba(0, 0, 0, 0.55),
+        0 0 60px rgba(0, 255, 136, 0.22),
+        0 0 120px rgba(0, 255, 136, 0.10),
+        inset 0 0 50px rgba(0, 255, 136, 0.06),
+        inset 0 1px 0 rgba(0, 255, 136, 0.12);
+    animation: fb-reveal-scale 0.7s ease-out 0.2s backwards;
+}
+
+[data-template="football"] .showcase-answer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.6), transparent);
+}
+
+[data-template="football"] .showcase-glow {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 255, 136, 0.14) 45%,
+        rgba(178, 255, 89, 0.10) 55%,
+        transparent 100%
+    );
+}
+
+[data-template="football"] .showcase-letter {
+    background: linear-gradient(145deg, #00ff88, #00c853);
+    box-shadow:
+        0 18px 50px rgba(0, 255, 136, 0.55),
+        0 0 30px rgba(0, 255, 136, 0.35),
+        inset 0 2px 8px rgba(255, 255, 255, 0.25);
+}
+
+
+/* ---------------------------------------------------------------------------
+   26. FASTEST PLAYER - MVP highlight (broadcast spotlight)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .fastest-card {
+    background: linear-gradient(145deg, rgba(255, 215, 64, 0.18), rgba(255, 215, 64, 0.05));
+    border: 2px solid rgba(255, 215, 64, 0.45);
+    box-shadow:
+        0 25px 70px rgba(255, 215, 64, 0.14),
+        0 0 45px rgba(255, 215, 64, 0.08),
+        inset 0 1px 0 rgba(255, 215, 64, 0.10);
+}
+
+[data-template="football"] .fastest-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 64, 0.5), transparent);
+}
+
+[data-template="football"] .fastest-card-glow {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 215, 64, 0.10) 50%,
+        transparent 100%
+    );
+}
+
+[data-template="football"] .fastest-label {
+    color: #ffd740;
+    text-shadow: 0 0 12px rgba(255, 215, 64, 0.35);
+}
+
+[data-template="football"] .fastest-time {
+    color: #b2ff59;
+    text-shadow: 0 0 10px rgba(178, 255, 89, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   27. WINNERS - Goal scorers (broadcast results panel)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .winners-count-badge {
+    background: linear-gradient(145deg, #00e676, #00c853);
+    box-shadow: 0 10px 30px rgba(0, 230, 118, 0.45), 0 0 18px rgba(0, 255, 136, 0.25);
+}
+
+[data-template="football"] .winners-banner-title {
+    text-shadow: 0 0 18px rgba(0, 255, 136, 0.25);
+}
+
+[data-template="football"] .winner-pill {
+    background: var(--fb-panel-bg);
+    border: 1px solid rgba(0, 255, 136, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+[data-template="football"] .winner-pill:hover {
+    border-color: rgba(0, 255, 136, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 25px rgba(0, 255, 136, 0.12);
+    transform: scale(1.05);
+}
+
+[data-template="football"] .winner-pill.fastest-pill {
+    background: linear-gradient(145deg, rgba(255, 215, 64, 0.16), rgba(255, 215, 64, 0.05));
+    border-color: rgba(255, 215, 64, 0.35);
+}
+
+[data-template="football"] .winner-pill-rank {
+    background: linear-gradient(145deg, #00e676, #00c853);
+    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.4);
+}
+
+[data-template="football"] .winner-pill.fastest-pill .winner-pill-rank {
+    background: linear-gradient(145deg, #ffd740, #ffab00);
+    box-shadow: 0 5px 15px rgba(255, 215, 64, 0.4);
+}
+
+[data-template="football"] .winner-pill-points {
+    color: #b2ff59;
+    text-shadow: 0 0 8px rgba(178, 255, 89, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   28. LEADERBOARD SCREEN - Final standings (broadcast results table)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .leaderboard-title {
+    text-shadow: 0 0 35px rgba(0, 255, 136, 0.35), 0 0 70px rgba(0, 255, 136, 0.12);
+}
+
+[data-template="football"] .podium-1 .podium-avatar {
+    background: linear-gradient(145deg, #ffd740, #ffab00);
+    box-shadow:
+        0 16px 55px rgba(255, 215, 64, 0.50),
+        0 0 35px rgba(255, 215, 64, 0.25);
+}
+
+[data-template="football"] .podium-2 .podium-avatar {
+    box-shadow: 0 14px 45px rgba(184, 197, 208, 0.4);
+}
+
+[data-template="football"] .podium-3 .podium-avatar {
+    box-shadow: 0 14px 45px rgba(205, 127, 50, 0.4);
+}
+
+[data-template="football"] .podium-score {
+    color: #b2ff59;
+    text-shadow: 0 0 12px rgba(178, 255, 89, 0.35);
+}
+
+[data-template="football"] .podium-1 .podium-bar {
+    background: linear-gradient(180deg, #ffd740, rgba(255, 215, 64, 0.35));
+    box-shadow: 0 0 35px rgba(255, 215, 64, 0.25), 0 -5px 20px rgba(255, 215, 64, 0.15) inset;
+}
+
+[data-template="football"] .podium-2 .podium-bar {
+    box-shadow: 0 0 25px rgba(184, 197, 208, 0.18);
+}
+
+[data-template="football"] .podium-3 .podium-bar {
+    box-shadow: 0 0 25px rgba(205, 127, 50, 0.18);
+}
+
+[data-template="football"] .lb-score {
+    color: #b2ff59;
+    text-shadow: 0 0 10px rgba(178, 255, 89, 0.35);
+}
+
+[data-template="football"] .leaderboard-item {
+    background: var(--fb-panel-bg);
+    border: 1px solid rgba(0, 255, 136, 0.10);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+[data-template="football"] .leaderboard-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    width: 80%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.10), transparent);
+    pointer-events: none;
+}
+
+[data-template="football"] .lb-rank {
+    background: rgba(0, 255, 136, 0.08);
+    border: 1px solid rgba(0, 255, 136, 0.12);
+}
+
+
+/* ---------------------------------------------------------------------------
+   29. COUNTDOWN SCREEN - Half-time broadcast
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .countdown-ring {
+    border-top-color: #00ff88;
+    border-right-color: #b2ff59;
+    filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.35));
+}
+
+[data-template="football"] .countdown-pulse {
+    background: linear-gradient(135deg, #00e676, #00bfa5);
+    box-shadow:
+        0 0 60px rgba(0, 255, 136, 0.35),
+        0 0 120px rgba(0, 255, 136, 0.12);
+}
+
+[data-template="football"] .countdown-value {
+    text-shadow: 0 0 45px rgba(0, 255, 136, 0.55), 0 0 90px rgba(0, 255, 136, 0.25);
+}
+
+[data-template="football"] .countdown-label {
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+}
+
+[data-template="football"] .countdown-hint {
+    color: #b2ff59;
+    text-shadow: 0 0 12px rgba(178, 255, 89, 0.35);
+}
+
+[data-template="football"] .engagement-content {
+    background: var(--fb-panel-bg);
+    border: 1px solid rgba(0, 255, 136, 0.18);
+    box-shadow:
+        var(--fb-depth-shadow),
+        0 0 45px rgba(0, 255, 136, 0.06);
+}
+
+[data-template="football"] .engagement-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.4), transparent);
+}
+
+[data-template="football"] .engagement-glow {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.12) 0%, transparent 55%);
+}
+
+[data-template="football"] .engagement-icon-badge {
+    background: linear-gradient(145deg, rgba(255, 215, 64, 0.18), rgba(0, 255, 136, 0.12));
+    border: 2px solid rgba(255, 215, 64, 0.3);
+}
+
+[data-template="football"] .engagement-divider {
+    background: linear-gradient(90deg, transparent, #00e676, #b2ff59, transparent);
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.35);
+}
+
+[data-template="football"] .engagement-tip {
+    background: rgba(0, 255, 136, 0.05);
+    border: 1px solid rgba(0, 255, 136, 0.14);
+}
+
+[data-template="football"] .engagement-tip-icon {
+    color: #69f0ae;
+    filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.55));
+}
+
+[data-template="football"] .engagement-tip-text {
+    color: #b2ff59;
+    text-shadow: 0 0 8px rgba(178, 255, 89, 0.25);
+}
+
+[data-template="football"] .engagement-title {
+    text-shadow: 0 0 18px rgba(0, 255, 136, 0.18);
+}
+
+
+/* ---------------------------------------------------------------------------
+   30. TRANSITION SCREEN - Next fixture broadcast
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .transition-check-glow {
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.50) 0%, rgba(0, 255, 136, 0.12) 35%, transparent 60%);
+}
+
+[data-template="football"] .transition-check-circle {
+    background: linear-gradient(145deg, #00ff88, #00c853);
+    box-shadow:
+        0 18px 55px rgba(0, 255, 136, 0.55),
+        0 0 35px rgba(0, 255, 136, 0.3);
+}
+
+[data-template="football"] .transition-finished-title {
+    text-shadow: 0 0 30px rgba(0, 255, 136, 0.45), 0 0 60px rgba(0, 255, 136, 0.18);
+}
+
+[data-template="football"] .transition-finished-name {
+    color: #b2ff59;
+    text-shadow: 0 0 15px rgba(178, 255, 89, 0.35);
+}
+
+[data-template="football"] .transition-next-card {
+    background: linear-gradient(145deg, rgba(0, 255, 136, 0.12), rgba(0, 191, 165, 0.07));
+    border: 2px solid rgba(0, 255, 136, 0.30);
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.40),
+        0 0 45px rgba(0, 255, 136, 0.10),
+        inset 0 1px 0 rgba(0, 255, 136, 0.08);
+    animation: scale-in 0.6s ease 0.4s backwards, fb-neon-pulse 5s ease-in-out infinite 1s;
+}
+
+[data-template="football"] .transition-next-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
+}
+
+[data-template="football"] .transition-next-glow {
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 136, 0.10) 50%, transparent 100%);
+}
+
+[data-template="football"] .transition-loader {
+    background: rgba(0, 255, 136, 0.06);
+}
+
+[data-template="football"] .transition-loader-bar {
+    background: linear-gradient(90deg, #00e676, #b2ff59, #00e5ff);
+    box-shadow: 0 0 18px rgba(0, 255, 136, 0.45);
+}
+
+[data-template="football"] .transition-hint {
+    text-shadow: 0 0 12px rgba(0, 255, 136, 0.18);
+}
+
+
+/* ---------------------------------------------------------------------------
+   31. END SCREEN - Final whistle (championship broadcast)
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .end-title {
+    background: linear-gradient(135deg, #ffd740, #b2ff59, #00ff88, #00e5ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 4s ease infinite;
+    filter: drop-shadow(0 0 25px rgba(0, 255, 136, 0.25));
+}
+
+[data-template="football"] .trophy-glow {
+    background: radial-gradient(circle, rgba(255, 215, 64, 0.55) 0%, rgba(0, 255, 136, 0.18) 35%, transparent 60%);
+}
+
+[data-template="football"] .trophy-icon {
+    filter: drop-shadow(0 18px 45px rgba(255, 215, 64, 0.65)) drop-shadow(0 0 35px rgba(0, 255, 136, 0.25));
+}
+
+[data-template="football"] .champion-card {
+    background: linear-gradient(145deg, rgba(255, 215, 64, 0.16), rgba(255, 215, 64, 0.05));
+    border: 3px solid rgba(255, 215, 64, 0.50);
+    box-shadow:
+        0 35px 90px rgba(255, 215, 64, 0.18),
+        0 0 55px rgba(255, 215, 64, 0.10),
+        inset 0 1px 0 rgba(255, 215, 64, 0.12);
+    animation: fb-reveal-scale 0.6s ease 0.3s backwards;
+}
+
+[data-template="football"] .champion-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 64, 0.6), transparent);
+}
+
+[data-template="football"] .champion-label {
+    color: #ffd740;
+    text-shadow: 0 0 14px rgba(255, 215, 64, 0.45);
+}
+
+[data-template="football"] .champion-name {
+    text-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+}
+
+[data-template="football"] .champion-score {
+    color: #b2ff59;
+    text-shadow: 0 0 12px rgba(178, 255, 89, 0.35);
+}
+
+[data-template="football"] .runner-up {
+    background: var(--fb-panel-bg);
+    border: 2px solid var(--card-border);
+}
+
+[data-template="football"] .runner-up[data-rank="2"] {
+    border-color: rgba(184, 197, 208, 0.4);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+}
+
+[data-template="football"] .runner-up[data-rank="3"] {
+    border-color: rgba(205, 127, 50, 0.4);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+}
+
+[data-template="football"] .end-thanks {
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.18);
+}
+
+
+/* ---------------------------------------------------------------------------
+   32. DOUBLE QUESTION BADGE - Special event broadcast
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .double-badge {
+    background: linear-gradient(145deg, rgba(255, 215, 64, 0.20), rgba(255, 215, 64, 0.07));
+    border: 2px solid rgba(255, 215, 64, 0.45);
+    box-shadow:
+        0 0 25px rgba(255, 215, 64, 0.18),
+        0 0 50px rgba(255, 215, 64, 0.08);
+}
+
+[data-template="football"] .double-badge-icon {
+    color: #ffd740;
+    text-shadow: 0 0 10px rgba(255, 215, 64, 0.45);
+}
+
+[data-template="football"] .double-badge-text {
+    color: #ffd740;
+    text-shadow: 0 0 10px rgba(255, 215, 64, 0.35);
+}
+
+[data-template="football"] .question-card.double-question-card {
+    border-color: rgba(255, 215, 64, 0.28);
+    box-shadow:
+        var(--fb-depth-shadow),
+        0 0 70px rgba(255, 215, 64, 0.06);
+}
+
+[data-template="football"] .question-card.double-question-card .card-border {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #ffd740 12%,
+        #ffab00 35%,
+        #ffd740 50%,
+        #ffab00 65%,
+        #ffd740 88%,
+        transparent 100%
+    );
+    box-shadow: 0 0 18px rgba(255, 215, 64, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   33. PAUSE OVERLAY - Match suspended broadcast
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] #pause-overlay .pause-backdrop {
+    background: rgba(1, 8, 4, 0.88);
+}
+
+[data-template="football"] #pause-overlay .pause-content {
+    background: var(--fb-panel-bg);
+    border: 2px solid rgba(0, 255, 136, 0.35);
+    box-shadow:
+        0 0 70px rgba(0, 255, 136, 0.12),
+        0 0 140px rgba(0, 255, 136, 0.05);
+    border-radius: 40px;
+    padding: 60px 80px;
+}
+
+[data-template="football"] #pause-overlay .pause-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
+}
+
+[data-template="football"] #pause-overlay .pause-icon-ring {
+    color: #00ff88;
+    border-color: rgba(0, 255, 136, 0.3);
+    filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.45));
+}
+
+[data-template="football"] #pause-overlay .pause-title {
+    color: #00ff88;
+    text-shadow: 0 0 25px rgba(0, 255, 136, 0.55), 0 0 50px rgba(0, 255, 136, 0.25);
+}
+
+[data-template="football"] #pause-overlay .pause-pulse-fill {
+    background: linear-gradient(90deg, #00e676, #b2ff59);
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.35);
+}
+
+
+/* ---------------------------------------------------------------------------
+   34. GLOBAL ENHANCEMENTS - Broadcast neon accents on all panels
+   --------------------------------------------------------------------------- */
+
+[data-template="football"] .no-winners-text {
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.18);
+}
+
+[data-template="football"] .no-winners-subtext {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-template="football"] .winners-grid::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 136, 0.4);
+}
+
+[data-template="football"] .winners-grid::-webkit-scrollbar-track {
+    background: rgba(0, 255, 136, 0.04);
+}

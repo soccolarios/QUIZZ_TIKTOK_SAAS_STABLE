@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Screens</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .test-controls button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <button onclick="showScreen('waiting')">Waiting</button>
+        <button onclick="showScreen('question')">Question</button>
+        <button onclick="showScreen('result')">Result</button>
+        <button onclick="showScreen('leaderboard')">Leaderboard</button>
+        <button onclick="showScreen('countdown')">Countdown</button>
+        <button onclick="showScreen('end')">End</button>
+        <div id="current-screen">Current: waiting</div>
+    </div>
+
+    <div id="app">
+        <div class="scene-layer scene-base">
+            <div class="scene-gradient-1"></div>
+        </div>
+
+        <div id="screen-waiting" class="screen active">
+            <div class="waiting-content">
+                <h1 class="waiting-title">WAITING SCREEN</h1>
+            </div>
+        </div>
+
+        <div id="screen-question" class="screen">
+            <div class="quiz-main-container">
+                <h1 style="color: white; font-size: 60px;">QUESTION SCREEN</h1>
+            </div>
+            <div class="mini-leaderboard">
+                <div class="mini-lb-header">
+                    <span class="mini-lb-icon">&#127942;</span>
+                    <span class="mini-lb-title">TOP 5</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-result" class="screen">
+            <div class="quiz-main-container">
+                <div class="result-header">
+                    <div class="result-badge">
+                        <span class="result-icon">&#10004;</span>
+                        <h2 class="result-title">BONNE REPONSE</h2>
+                    </div>
+                </div>
+                <div class="correct-answer-card">
+                    <div class="correct-letter-wrap">
+                        <div class="correct-letter">A</div>
+                    </div>
+                    <div class="correct-text">Test Answer</div>
+                </div>
+                <div class="result-stats">
+                    <div class="stat-item correct-stat" data-choice="A">
+                        <div class="stat-letter">A</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 60%"></div>
+                        </div>
+                        <div class="stat-percent">60%</div>
+                    </div>
+                    <div class="stat-item" data-choice="B">
+                        <div class="stat-letter">B</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 20%"></div>
+                        </div>
+                        <div class="stat-percent">20%</div>
+                    </div>
+                </div>
+                <div class="winners-section">
+                    <div class="winners-header">
+                        <span class="winners-icon">&#127775;</span>
+                        <h3 class="winners-title">LES PLUS RAPIDES</h3>
+                    </div>
+                    <div class="winners-list">
+                        <div class="winner-item">
+                            <div class="winner-position">1</div>
+                            <div class="winner-name">TestPlayer1</div>
+                            <div class="winner-points">+150</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mini-leaderboard">
+                <div class="mini-lb-header">
+                    <span class="mini-lb-icon">&#127942;</span>
+                    <span class="mini-lb-title">TOP 5</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-leaderboard" class="screen">
+            <h1 style="color: white; font-size: 60px;">LEADERBOARD SCREEN</h1>
+        </div>
+
+        <div id="screen-countdown" class="screen">
+            <h1 style="color: white; font-size: 60px;">COUNTDOWN SCREEN</h1>
+        </div>
+
+        <div id="screen-end" class="screen">
+            <h1 style="color: white; font-size: 60px;">END SCREEN</h1>
+        </div>
+    </div>
+
+    <script>
+        const screens = {
+            waiting: document.getElementById('screen-waiting'),
+            question: document.getElementById('screen-question'),
+            result: document.getElementById('screen-result'),
+            leaderboard: document.getElementById('screen-leaderboard'),
+            countdown: document.getElementById('screen-countdown'),
+            end: document.getElementById('screen-end')
+        };
+
+        function showScreen(name) {
+            console.log('Showing screen:', name);
+
+            Object.entries(screens).forEach(([key, screen]) => {
+                if (screen) {
+                    screen.classList.remove('active');
+                    console.log('Removed active from:', key);
+                }
+            });
+
+            if (screens[name]) {
+                screens[name].classList.add('active');
+                console.log('Added active to:', name);
+                document.getElementById('current-screen').textContent = 'Current: ' + name;
+            }
+        }
+    </script>
+</body>
+</html>

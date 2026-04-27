@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <title>TikTok Quiz - Overlay</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <div class="scene-layer scene-base">
+            <div class="scene-gradient-1"></div>
+            <div class="scene-gradient-2"></div>
+            <div class="scene-gradient-3"></div>
+        </div>
+
+        <div class="scene-layer scene-depth">
+            <div class="depth-orb depth-orb-1"></div>
+            <div class="depth-orb depth-orb-2"></div>
+            <div class="depth-orb depth-orb-3"></div>
+            <div class="depth-orb depth-orb-4"></div>
+            <div class="depth-orb depth-orb-5"></div>
+            <div class="depth-orb depth-orb-6"></div>
+        </div>
+
+        <div class="scene-layer scene-grid">
+            <div class="perspective-grid"></div>
+        </div>
+
+        <div class="scene-layer scene-lights">
+            <div class="light-beam light-beam-1"></div>
+            <div class="light-beam light-beam-2"></div>
+            <div class="light-beam light-beam-3"></div>
+            <div class="spotlight spotlight-top"></div>
+            <div class="spotlight spotlight-left"></div>
+            <div class="spotlight spotlight-right"></div>
+        </div>
+
+        <div class="scene-layer scene-particles">
+            <div class="floating-particle fp-1"></div>
+            <div class="floating-particle fp-2"></div>
+            <div class="floating-particle fp-3"></div>
+            <div class="floating-particle fp-4"></div>
+            <div class="floating-particle fp-5"></div>
+            <div class="floating-particle fp-6"></div>
+            <div class="floating-particle fp-7"></div>
+            <div class="floating-particle fp-8"></div>
+            <div class="floating-particle fp-9"></div>
+            <div class="floating-particle fp-10"></div>
+            <div class="floating-particle fp-11"></div>
+            <div class="floating-particle fp-12"></div>
+        </div>
+
+        <div class="scene-layer scene-ambiance">
+            <div class="ambient-glow ambient-glow-top"></div>
+            <div class="ambient-glow ambient-glow-bottom"></div>
+            <div class="pulse-ring pulse-ring-1"></div>
+            <div class="pulse-ring pulse-ring-2"></div>
+            <div class="scan-line"></div>
+        </div>
+
+        <div class="scene-layer scene-frame">
+            <div class="frame-corner frame-tl"></div>
+            <div class="frame-corner frame-tr"></div>
+            <div class="frame-corner frame-bl"></div>
+            <div class="frame-corner frame-br"></div>
+            <div class="frame-line frame-line-top"></div>
+            <div class="frame-line frame-line-bottom"></div>
+            <div class="frame-accent frame-accent-left"></div>
+            <div class="frame-accent frame-accent-right"></div>
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                <span class="live-text">LIVE</span>
+            </div>
+        </div>
+
+        <div class="scene-layer scene-vignette"></div>
+
+        <div id="screen-waiting" class="screen active">
+            <div class="waiting-content">
+                <div class="logo-container">
+                    <div class="logo-ring logo-ring-outer"></div>
+                    <div class="logo-ring logo-ring-inner"></div>
+                    <div class="logo-pulse">
+                        <span class="logo-icon">?</span>
+                    </div>
+                </div>
+                <h1 class="waiting-title">QUIZ LIVE</h1>
+                <p class="waiting-subtitle">En attente du demarrage</p>
+                <div class="connecting-indicator">
+                    <div class="connecting-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-starting" class="screen">
+            <div class="starting-content">
+                <div class="starting-icon-container">
+                    <div class="starting-ring starting-ring-1"></div>
+                    <div class="starting-ring starting-ring-2"></div>
+                    <div class="starting-ring starting-ring-3"></div>
+                    <div class="starting-icon">&#9889;</div>
+                </div>
+                <h1 class="starting-title">DEMARRAGE</h1>
+                <p class="starting-subtitle">Le quiz se prepare...</p>
+                <div class="starting-progress">
+                    <div class="starting-progress-bar"></div>
+                </div>
+                <p class="starting-hint">La premiere question arrive bientot !</p>
+            </div>
+        </div>
+
+        <div id="screen-question" class="screen">
+            <div class="quiz-main-container">
+                <div class="quiz-header">
+                    <div class="question-info">
+                        <div class="question-badge">
+                            <span class="badge-label">QUESTION</span>
+                            <span class="question-number">1</span>
+                            <span class="question-separator">/</span>
+                            <span class="question-total">10</span>
+                        </div>
+                    </div>
+                    <div class="timer-wrapper">
+                        <div class="timer-glow"></div>
+                        <div class="timer-ring">
+                            <svg viewBox="0 0 200 200">
+                                <defs>
+                                    <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#00f5d4"/>
+                                        <stop offset="50%" stop-color="#7b2ff7"/>
+                                        <stop offset="100%" stop-color="#f72585"/>
+                                    </linearGradient>
+                                </defs>
+                                <circle class="timer-bg" cx="100" cy="100" r="85"/>
+                                <circle class="timer-progress" cx="100" cy="100" r="85"/>
+                            </svg>
+                            <div class="timer-inner">
+                                <span class="timer-value">20</span>
+                                <span class="timer-label">SEC</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="double-badge" style="display:none;">
+                    <span class="double-badge-icon">&#10006;2</span>
+                    <span class="double-badge-text">QUESTION DOUBLE</span>
+                </div>
+
+                <div class="question-card">
+                    <div class="card-shine"></div>
+                    <div class="card-border"></div>
+                    <p class="question-text">Chargement de la question...</p>
+                </div>
+
+                <div class="choices-container">
+                    <div class="choice" data-choice="A">
+                        <div class="choice-glow"></div>
+                        <div class="choice-content">
+                            <div class="choice-letter">A</div>
+                            <div class="choice-text">Option A</div>
+                            <div class="choice-stats">
+                                <div class="choice-bar">
+                                    <div class="choice-bar-fill"></div>
+                                </div>
+                                <div class="choice-percent">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="choice" data-choice="B">
+                        <div class="choice-glow"></div>
+                        <div class="choice-content">
+                            <div class="choice-letter">B</div>
+                            <div class="choice-text">Option B</div>
+                            <div class="choice-stats">
+                                <div class="choice-bar">
+                                    <div class="choice-bar-fill"></div>
+                                </div>
+                                <div class="choice-percent">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="choice" data-choice="C">
+                        <div class="choice-glow"></div>
+                        <div class="choice-content">
+                            <div class="choice-letter">C</div>
+                            <div class="choice-text">Option C</div>
+                            <div class="choice-stats">
+                                <div class="choice-bar">
+                                    <div class="choice-bar-fill"></div>
+                                </div>
+                                <div class="choice-percent">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="choice" data-choice="D">
+                        <div class="choice-glow"></div>
+                        <div class="choice-content">
+                            <div class="choice-letter">D</div>
+                            <div class="choice-text">Option D</div>
+                            <div class="choice-stats">
+                                <div class="choice-bar">
+                                    <div class="choice-bar-fill"></div>
+                                </div>
+                                <div class="choice-percent">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="answer-counter">
+                    <div class="counter-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <span class="count-value">0</span>
+                    <span class="count-label">reponses</span>
+                </div>
+            </div>
+
+            <div class="cta-comment-block">
+                <div class="cta-glow"></div>
+                <div class="cta-content">
+                    <div class="cta-icon-row">
+                        <span class="cta-chat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                            </svg>
+                        </span>
+                        <span class="cta-bolt-icon">&#9889;</span>
+                    </div>
+                    <p class="cta-main-text">Reponds maintenant !</p>
+                    <p class="cta-sub-text">Tape A, B, C ou D en commentaire</p>
+                    <div class="cta-letters-row">
+                        <span class="cta-letter-chip">A</span>
+                        <span class="cta-letter-chip">B</span>
+                        <span class="cta-letter-chip">C</span>
+                        <span class="cta-letter-chip">D</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mini-leaderboard">
+                <div class="mini-lb-header">
+                    <span class="mini-lb-icon">&#127942;</span>
+                    <span class="mini-lb-title">TOP 5</span>
+                </div>
+                <div class="mini-lb-list">
+                    <div class="mini-lb-item" data-rank="1">
+                        <span class="mini-rank">1</span>
+                        <span class="mini-name">---</span>
+                        <span class="mini-score">0</span>
+                    </div>
+                    <div class="mini-lb-item" data-rank="2">
+                        <span class="mini-rank">2</span>
+                        <span class="mini-name">---</span>
+                        <span class="mini-score">0</span>
+                    </div>
+                    <div class="mini-lb-item" data-rank="3">
+                        <span class="mini-rank">3</span>
+                        <span class="mini-name">---</span>
+                        <span class="mini-score">0</span>
+                    </div>
+                    <div class="mini-lb-item" data-rank="4">
+                        <span class="mini-rank">4</span>
+                        <span class="mini-name">---</span>
+                        <span class="mini-score">0</span>
+                    </div>
+                    <div class="mini-lb-item" data-rank="5">
+                        <span class="mini-rank">5</span>
+                        <span class="mini-name">---</span>
+                        <span class="mini-score">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-result" class="screen">
+            <div class="result-fullscreen">
+                <div class="result-celebration-bg">
+                    <div class="celebration-burst"></div>
+                    <div class="celebration-rays"></div>
+                </div>
+
+                <div class="result-main-banner">
+                    <div class="banner-glow"></div>
+                    <div class="banner-content">
+                        <span class="banner-icon">&#10024;</span>
+                        <h1 class="banner-title">TEMPS ECOULE !</h1>
+                        <p class="banner-subtitle">Voici la bonne reponse</p>
+                    </div>
+                </div>
+
+                <div class="result-answer-showcase">
+                    <div class="showcase-label">La bonne reponse etait</div>
+                    <div class="showcase-answer">
+                        <div class="showcase-glow"></div>
+                        <div class="showcase-letter-container">
+                            <div class="showcase-letter"></div>
+                        </div>
+                        <div class="showcase-text"></div>
+                    </div>
+                </div>
+
+                <div class="result-fastest-section">
+                    <div class="fastest-card">
+                        <div class="fastest-card-glow"></div>
+                        <div class="fastest-icon">&#9889;</div>
+                        <div class="fastest-avatar-slot"></div>
+                        <div class="fastest-info">
+                            <span class="fastest-label">LE PLUS RAPIDE</span>
+                            <span class="fastest-player-name">---</span>
+                            <span class="fastest-time"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-winners-section">
+                    <div class="winners-banner">
+                        <span class="winners-banner-icon">&#127881;</span>
+                        <h2 class="winners-banner-title">FELICITATIONS AUX GAGNANTS !</h2>
+                        <span class="winners-count-badge">0</span>
+                    </div>
+                    <div class="winners-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-leaderboard" class="screen">
+            <div class="leaderboard-full">
+                <div class="leaderboard-header">
+                    <div class="lb-trophy">&#127942;</div>
+                    <h2 class="leaderboard-title">CLASSEMENT</h2>
+                </div>
+
+                <div class="leaderboard-podium">
+                    <div class="podium-item podium-2">
+                        <div class="podium-avatar-slot"></div>
+                        <div class="podium-avatar">2</div>
+                        <div class="podium-name">---</div>
+                        <div class="podium-score">0</div>
+                        <div class="podium-bar"></div>
+                    </div>
+                    <div class="podium-item podium-1">
+                        <div class="podium-crown">&#128081;</div>
+                        <div class="podium-avatar-slot"></div>
+                        <div class="podium-avatar">1</div>
+                        <div class="podium-name">---</div>
+                        <div class="podium-score">0</div>
+                        <div class="podium-bar"></div>
+                    </div>
+                    <div class="podium-item podium-3">
+                        <div class="podium-avatar-slot"></div>
+                        <div class="podium-avatar">3</div>
+                        <div class="podium-name">---</div>
+                        <div class="podium-score">0</div>
+                        <div class="podium-bar"></div>
+                    </div>
+                </div>
+
+                <div class="leaderboard-list">
+                    <div class="leaderboard-item" data-rank="4">
+                        <div class="lb-rank">4</div>
+                        <div class="lb-name">---</div>
+                        <div class="lb-score">0</div>
+                    </div>
+                    <div class="leaderboard-item" data-rank="5">
+                        <div class="lb-rank">5</div>
+                        <div class="lb-name">---</div>
+                        <div class="lb-score">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-countdown" class="screen">
+            <div class="countdown-container">
+                <p class="countdown-label">PROCHAINE QUESTION DANS</p>
+                <div class="countdown-circle">
+                    <div class="countdown-ring"></div>
+                    <div class="countdown-pulse"></div>
+                    <span class="countdown-value">10</span>
+                </div>
+                <p class="countdown-hint">Preparez-vous !</p>
+            </div>
+
+            <div class="countdown-engagement">
+                <div class="engagement-glow"></div>
+                <div class="engagement-content">
+                    <div class="engagement-icon-badge">
+                        <span class="engagement-bolt">&#9889;</span>
+                    </div>
+                    <p class="engagement-title">La prochaine peut tout changer</p>
+                    <p class="engagement-subtitle">Sois pret a repondre rapidement dans les commentaires</p>
+                    <div class="engagement-divider"></div>
+                    <div class="engagement-tip">
+                        <span class="engagement-tip-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                            </svg>
+                        </span>
+                        <span class="engagement-tip-text">Ecris A, B, C ou D des que la question apparait</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-transition" class="screen">
+            <div class="transition-container">
+                <div class="transition-check-container">
+                    <div class="transition-check-glow"></div>
+                    <div class="transition-check-circle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="transition-finished-title">QUESTIONNAIRE TERMINE !</h1>
+                <p class="transition-finished-name"></p>
+
+                <div class="transition-divider">
+                    <div class="transition-divider-line"></div>
+                    <div class="transition-divider-icon">&#9889;</div>
+                    <div class="transition-divider-line"></div>
+                </div>
+
+                <p class="transition-next-label">PROCHAIN QUESTIONNAIRE</p>
+                <div class="transition-next-card">
+                    <div class="transition-next-glow"></div>
+                    <p class="transition-next-name"></p>
+                </div>
+
+                <div class="transition-loader">
+                    <div class="transition-loader-bar"></div>
+                </div>
+                <p class="transition-hint">Preparez-vous pour la suite !</p>
+            </div>
+        </div>
+
+        <div id="screen-double-open" class="screen">
+            <div class="x2-open-container">
+                <div class="x2-badge-ring">
+                    <div class="x2-badge-glow"></div>
+                    <div class="x2-badge-icon">X2</div>
+                </div>
+                <h1 class="x2-title">DOUBLE OR NOTHING</h1>
+                <p class="x2-subtitle">Tape <strong>X2</strong> en commentaire pour doubler tes points !</p>
+                <div class="x2-timer-bar-wrap">
+                    <div class="x2-timer-bar" id="x2-timer-bar"></div>
+                </div>
+                <div class="x2-registered-preview" id="x2-registered-preview">
+                    <span class="x2-registered-count" id="x2-registered-count">0</span>
+                    <span class="x2-registered-label">inscrits</span>
+                </div>
+                <div class="x2-participants-list" id="x2-open-participants"></div>
+            </div>
+        </div>
+
+        <div id="screen-double-show" class="screen">
+            <div class="x2-show-container">
+                <div class="x2-show-header">
+                    <div class="x2-show-icon">X2</div>
+                    <h1 class="x2-show-title">JOUEURS EN JEU</h1>
+                    <p class="x2-show-subtitle">Ces joueurs jouent leur mise !</p>
+                </div>
+                <div class="x2-show-count-badge" id="x2-show-count">0</div>
+                <div class="x2-show-list" id="x2-show-list"></div>
+                <p class="x2-show-hint">Bonne chance !</p>
+            </div>
+        </div>
+
+        <div id="screen-double-result" class="screen">
+            <div class="x2-result-container">
+                <div class="x2-result-header">
+                    <div class="x2-result-icon">X2</div>
+                    <h1 class="x2-result-title">RESULTATS DOUBLE</h1>
+                </div>
+                <div class="x2-result-sections">
+                    <div class="x2-result-section x2-result-success" id="x2-result-success-section">
+                        <div class="x2-result-section-header">
+                            <span class="x2-result-section-icon">&#10004;</span>
+                            <span class="x2-result-section-title">POINTS DOUBLES</span>
+                            <span class="x2-result-section-count" id="x2-success-count">0</span>
+                        </div>
+                        <div class="x2-result-list" id="x2-success-list"></div>
+                    </div>
+                    <div class="x2-result-section x2-result-fail" id="x2-result-fail-section">
+                        <div class="x2-result-section-header">
+                            <span class="x2-result-section-icon">&#10006;</span>
+                            <span class="x2-result-section-title">POINTS PERDUS</span>
+                            <span class="x2-result-section-count" id="x2-fail-count">0</span>
+                        </div>
+                        <div class="x2-result-list" id="x2-fail-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-end" class="screen">
+            <div class="end-container">
+                <div class="end-confetti"></div>
+                <div class="trophy-container">
+                    <div class="trophy-glow"></div>
+                    <div class="trophy-icon">&#127942;</div>
+                </div>
+                <h1 class="end-title">FIN DU QUIZ</h1>
+
+                <div class="champion-card">
+                    <div class="champion-crown">&#128081;</div>
+                    <div class="champion-avatar-slot"></div>
+                    <p class="champion-label">CHAMPION</p>
+                    <p class="champion-name">---</p>
+                    <p class="champion-score">0 points</p>
+                </div>
+
+                <div class="runner-ups">
+                    <div class="runner-up" data-rank="2">
+                        <div class="ru-medal">&#129352;</div>
+                        <div class="ru-avatar-slot"></div>
+                        <span class="ru-name">---</span>
+                    </div>
+                    <div class="runner-up" data-rank="3">
+                        <div class="ru-medal">&#129353;</div>
+                        <div class="ru-avatar-slot"></div>
+                        <span class="ru-name">---</span>
+                    </div>
+                </div>
+
+                <p class="end-thanks">Merci d'avoir joue !</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="config-loader.js"></script>
+    <script src="audio-manager.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

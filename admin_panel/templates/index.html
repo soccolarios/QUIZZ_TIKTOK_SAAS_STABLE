@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Quiz - Admin</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <div class="header-left">
+            <span class="logo">TikTok Quiz</span>
+            <div class="status-badge" id="statusBadge">
+                <span class="pulse"></span>
+                <span class="status-text">Hors ligne</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="overlay-link" onclick="copyOverlayUrl()" title="Copier le lien overlay">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                <code id="overlayUrl">overlay</code>
+            </div>
+            <button class="btn btn-ghost btn-xs" onclick="adminLogout()" title="Se deconnecter" style="gap:6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Deconnexion
+            </button>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="game" onclick="switchTab('game')">Jeu</button>
+        <button class="tab" data-tab="questionnaires" onclick="switchTab('questionnaires')">Questionnaires</button>
+        <button class="tab" data-tab="audio" onclick="switchTab('audio')">Audio</button>
+        <button class="tab" data-tab="music" onclick="switchTab('music')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            Musique
+        </button>
+        <button class="tab" data-tab="ia" onclick="switchTab('ia')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/></svg>
+            IA
+        </button>
+        <button class="tab" data-tab="logs" onclick="switchTab('logs')">Logs</button>
+    </div>
+
+    <div class="tab-content active" id="tab-game">
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                Configuration du jeu
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Pseudo TikTok</label>
+                    <input type="text" id="username" class="form-input" placeholder="@username">
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:4px;">
+                    <input type="checkbox" id="simulateMode" onchange="onSimulateModeChange()" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer;">
+                    <label for="simulateMode" style="cursor:pointer;font-size:13px;color:var(--text-muted);user-select:none;">Mode simulation (sans TikTok)</label>
+                </div>
+                <div class="form-group">
+                    <label>Mode de jeu</label>
+                    <select id="playMode" class="form-input select-input" onchange="onPlayModeChange()">
+                        <option value="single">Questionnaire unique</option>
+                        <option value="sequential">Sequentiel (tous)</option>
+                        <option value="infinite_all">Boucle infinie (tous)</option>
+                        <option value="infinite_single">Boucle infinie (un seul)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="qnSelectorGroup">
+                    <label>Questionnaire</label>
+                    <select id="qnSelector" class="form-input select-input"></select>
+                </div>
+                <div class="form-group">
+                    <label>Temps par question (s)</label>
+                    <input type="number" id="questionTime" class="form-input" value="20" min="5" max="120">
+                </div>
+                <div class="form-group">
+                    <label>Delai TikTok (s)</label>
+                    <input type="number" id="delay" class="form-input" value="3" min="0" max="30">
+                </div>
+                <div class="form-group">
+                    <label>Nb questions (0=toutes)</label>
+                    <input type="number" id="questions" class="form-input" value="0" min="0">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="noTts">
+                    <label for="noTts">Desactiver TTS</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="x2Enabled" onchange="onX2EnabledChange()">
+                    <label for="x2Enabled">Activer le mode X2</label>
+                </div>
+                <div class="form-group" id="x2FrequencyGroup" style="display:none;">
+                    <label>Frequence X2</label>
+                    <select id="x2Frequency" class="form-input select-input">
+                        <option value="3">Toutes les 3 questions</option>
+                        <option value="5">Toutes les 5 questions</option>
+                        <option value="random">Aleatoire</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Template overlay</label>
+                    <select id="overlayTemplate" class="form-input select-input" onchange="onTemplateChange()">
+                        <option value="standard">Standard</option>
+                        <option value="football">Football</option>
+                    </select>
+                </div>
+            </div>
+            <div class="launch-summary" id="launchSummary">Questionnaire unique</div>
+            <div class="control-actions">
+                <button class="btn btn-success" id="btnStart" onclick="startGame()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Demarrer
+                </button>
+                <button class="btn" id="btnPause" disabled onclick="togglePause()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="pauseIcon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    <span id="pauseLabel">Pause</span>
+                </button>
+                <button class="btn btn-danger-solid" id="btnStop" disabled onclick="stopGame()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12"/></svg>
+                    Arreter
+                </button>
+                <button class="btn" id="btnRestart" disabled onclick="restartGame()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                    Redemarrer
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                Etat du serveur
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Statut</div>
+                    <div class="info-value" id="infoStatus" style="color:#71717a">Hors ligne</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Uptime</div>
+                    <div class="info-value" id="infoUptime">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Etat moteur</div>
+                    <div class="info-value" id="infoEngineState">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-questionnaires">
+        <div id="qnListView">
+            <div class="qn-section-header">
+                <h2 class="qn-section-title">Questionnaires</h2>
+                <div class="qn-header-actions">
+                    <button class="btn btn-primary btn-sm" onclick="createQuestionnaire()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nouveau
+                    </button>
+                    <button class="btn btn-sm" onclick="importQuestionnairePrompt()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Importer
+                    </button>
+                </div>
+            </div>
+            <div id="qnList"></div>
+        </div>
+
+        <div id="qnDetailView" style="display:none;">
+            <div class="qn-detail-header">
+                <div class="qn-detail-info">
+                    <h2 class="qn-detail-name" id="qnDetailName"></h2>
+                    <div class="qn-detail-meta" id="qnDetailMeta"></div>
+                </div>
+                <div class="qn-detail-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="backToList()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Retour
+                    </button>
+                    <button class="btn btn-sm" onclick="editQuestionnaireInfo()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Modifier infos
+                    </button>
+                    <button class="btn btn-sm" onclick="importQuestionsPrompt()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Importer questions
+                    </button>
+                    <button class="btn btn-sm" onclick="exportCurrentQn()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Exporter
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="addQuestion()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Question
+                    </button>
+                </div>
+            </div>
+            <div class="card qn-audio-card" id="qnAudioSection">
+                <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    Audio du questionnaire
+                    <span class="qn-audio-badge" id="qnAudioBadge"></span>
+                </div>
+                <div id="qnAudioStatus"></div>
+            </div>
+            <div class="q-search-bar">
+                <input type="text" id="qSearch" class="form-input" placeholder="Rechercher une question..." oninput="searchQuestions()">
+            </div>
+            <div id="questionsList"></div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-audio">
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                Provider TTS
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Provider actif</label>
+                    <select id="audioProvider" class="form-input select-input" onchange="onAudioProviderChange()">
+                        <option value="openai">OpenAI TTS</option>
+                        <option value="elevenlabs">ElevenLabs</option>
+                        <option value="azure">Azure TTS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Langue</label>
+                    <select id="audioLanguage" class="form-input select-input" onchange="onAudioLanguageChange()"></select>
+                </div>
+                <div class="form-group audio-provider-option" data-providers="openai elevenlabs" id="audioModelGroup">
+                    <label>Modele</label>
+                    <select id="audioModel" class="form-input select-input"></select>
+                </div>
+                <div class="form-group">
+                    <label>Voix</label>
+                    <select id="audioVoice" class="form-input select-input"></select>
+                </div>
+                <div class="form-group audio-provider-option" id="audioSpeedGroup" data-providers="openai">
+                    <label>Vitesse</label>
+                    <input type="number" id="audioSpeed" class="form-input" value="1.0" min="0.25" max="4.0" step="0.1">
+                </div>
+            </div>
+            <div class="audio-current-config" id="audioCurrentConfig"></div>
+
+            <div class="audio-provider-config" id="audioProviderConfig">
+                <div class="audio-provider-section" data-provider="openai" id="sectionOpenai">
+                    <div class="audio-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        Configuration OpenAI
+                    </div>
+                    <div class="form-group">
+                        <label>Cle API OpenAI</label>
+                        <div class="api-key-row">
+                            <input type="password" id="keyOpenai" class="form-input" placeholder="sk-...">
+                            <button class="btn btn-xs" onclick="toggleKeyVisibility('keyOpenai', this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                            <button class="btn btn-xs btn-primary" onclick="saveAudioApiKey('openai')">Sauver</button>
+                            <button class="btn btn-xs" onclick="testAudioProvider('openai')">Tester</button>
+                        </div>
+                        <span class="audio-key-status" id="statusOpenai"></span>
+                    </div>
+                </div>
+
+                <div class="audio-provider-section" data-provider="elevenlabs" id="sectionElevenlabs">
+                    <div class="audio-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        Configuration ElevenLabs
+                    </div>
+                    <div class="form-group">
+                        <label>Cle API ElevenLabs</label>
+                        <div class="api-key-row">
+                            <input type="password" id="keyElevenlabs" class="form-input" placeholder="xi-...">
+                            <button class="btn btn-xs" onclick="toggleKeyVisibility('keyElevenlabs', this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                            <button class="btn btn-xs btn-primary" onclick="saveAudioApiKey('elevenlabs')">Sauver</button>
+                            <button class="btn btn-xs" onclick="testAudioProvider('elevenlabs')">Tester</button>
+                        </div>
+                        <span class="audio-key-status" id="statusElevenlabs"></span>
+                    </div>
+                    <div class="form-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label>Stabilite</label>
+                            <input type="number" id="elStability" class="form-input" value="0.5" min="0" max="1" step="0.05">
+                        </div>
+                        <div class="form-group">
+                            <label>Similarite</label>
+                            <input type="number" id="elSimilarity" class="form-input" value="0.75" min="0" max="1" step="0.05">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="audio-provider-section" data-provider="azure" id="sectionAzure">
+                    <div class="audio-section-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        Configuration Azure
+                    </div>
+                    <div class="form-group">
+                        <label>Cle API Azure</label>
+                        <div class="api-key-row">
+                            <input type="password" id="keyAzure" class="form-input" placeholder="...">
+                            <button class="btn btn-xs" onclick="toggleKeyVisibility('keyAzure', this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                            <button class="btn btn-xs btn-primary" onclick="saveAudioApiKey('azure')">Sauver</button>
+                            <button class="btn btn-xs" onclick="testAudioProvider('azure')">Tester</button>
+                        </div>
+                        <span class="audio-key-status" id="statusAzure"></span>
+                    </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label>Region Azure</label>
+                        <input type="text" id="azureRegion" class="form-input" placeholder="westeurope">
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="control-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveAudioConfig()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Sauvegarder config
+                </button>
+                <button class="btn btn-sm" onclick="testCurrentProvider()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Tester le provider actif
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/></svg>
+                Generation audio
+            </div>
+            <div id="audioGenStatus" class="audio-gen-sections"></div>
+            <div class="control-actions" style="margin-top:16px;">
+                <button class="btn btn-success btn-sm" onclick="generateAllAudio()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Tout generer
+                </button>
+                <button class="btn btn-sm" onclick="generateAllAudio(true)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                    Tout regenerer
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Textes audio - Mots
+            </div>
+            <div id="audioWordsEditor" class="audio-text-editor"></div>
+            <div class="control-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveAudioTexts()">Sauvegarder textes</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Textes audio - Phrases
+            </div>
+            <div id="audioPhrasesEditor" class="audio-text-editor"></div>
+            <div class="control-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveAudioTexts()">Sauvegarder textes</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+                Fichiers audio
+            </div>
+            <div id="audioFilesBrowser" class="audio-files-browser"></div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-music">
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Pistes musicales
+            </div>
+            <div class="music-upload-zone" id="musicUploadZone">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div class="music-upload-text">Deposer des fichiers audio ici</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">MP3, OGG, WAV, M4A, FLAC</div>
+                <input type="file" id="musicFileInput" accept=".mp3,.ogg,.wav,.m4a,.flac" multiple style="display:none" onchange="musicUploadFiles(this.files)">
+                <button class="btn btn-sm" style="margin-top:12px;" onclick="document.getElementById('musicFileInput').click()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Choisir un fichier
+                </button>
+            </div>
+            <div id="musicTrackList" class="music-track-list"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+                Contr&#244;le en direct
+            </div>
+            <div class="music-controls-live">
+                <button class="btn btn-sm" onclick="musicCommand('play')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Lire
+                </button>
+                <button class="btn btn-sm" onclick="musicCommand('pause')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    Pause
+                </button>
+                <button class="btn btn-sm" onclick="musicCommand('stop')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16"/></svg>
+                    Stop
+                </button>
+                <button class="btn btn-sm" onclick="musicCommand('prev')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    Pr&#233;c
+                </button>
+                <button class="btn btn-sm" onclick="musicCommand('next')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    Suiv
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Options de lecture
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Volume musique</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.4" class="ia-range" style="flex:1;" oninput="document.getElementById('musicVolumeVal').textContent=Math.round(this.value*100)+'%'">
+                        <span id="musicVolumeVal" style="font-size:12px;color:var(--text-muted);min-width:36px;">40%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="music-toggles">
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                        Musique activ&#233;e
+                    </span>
+                    <button class="ia-toggle ia-toggle--active" id="musicEnabled" onclick="musicToggleOpt(this,'enabled')" role="switch" aria-checked="true"></button>
+                </label>
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                        Lecture en boucle
+                    </span>
+                    <button class="ia-toggle ia-toggle--active" id="musicLoop" onclick="musicToggleOpt(this,'loop')" role="switch" aria-checked="true"></button>
+                </label>
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+                        Lecture al&#233;atoire
+                    </span>
+                    <button class="ia-toggle" id="musicShuffle" onclick="musicToggleOpt(this,'shuffle')" role="switch" aria-checked="false"></button>
+                </label>
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        Jouer toute la file
+                    </span>
+                    <button class="ia-toggle" id="musicQueueMode" onclick="musicToggleOpt(this,'queue_mode')" role="switch" aria-checked="false"></button>
+                </label>
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Reprendre &#224; la m&#234;me position
+                    </span>
+                    <button class="ia-toggle ia-toggle--active" id="musicResumePosition" onclick="musicToggleOpt(this,'resume_position')" role="switch" aria-checked="true"></button>
+                </label>
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        D&#233;marrer avec le jeu
+                    </span>
+                    <button class="ia-toggle ia-toggle--active" id="musicAutoStart" onclick="musicToggleOpt(this,'auto_start')" role="switch" aria-checked="true"></button>
+                </label>
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16"/></svg>
+                        Arr&#234;ter &#224; la fin du jeu
+                    </span>
+                    <button class="ia-toggle ia-toggle--active" id="musicAutoStop" onclick="musicToggleOpt(this,'auto_stop')" role="switch" aria-checked="true"></button>
+                </label>
+            </div>
+            <div class="control-actions" style="margin-top:16px;">
+                <button class="btn btn-primary btn-sm" onclick="saveMusicConfig()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Sauvegarder
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
+                Ducking automatique (r&#233;duction pendant la voix)
+            </div>
+            <div class="music-toggles">
+                <label class="ia-toggle-row">
+                    <span class="ia-toggle-label">Ducking activ&#233;</span>
+                    <button class="ia-toggle ia-toggle--active" id="duckingEnabled" onclick="musicDuckingToggle(this)" role="switch" aria-checked="true"></button>
+                </label>
+            </div>
+            <div class="form-grid" style="margin-top:16px;" id="duckingOptions">
+                <div class="form-group">
+                    <label>Volume pendant la voix</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <input type="range" id="duckingVolume" min="0" max="0.5" step="0.01" value="0.08" class="ia-range" style="flex:1;" oninput="document.getElementById('duckingVolumeVal').textContent=Math.round(this.value*100)+'%'">
+                        <span id="duckingVolumeVal" style="font-size:12px;color:var(--text-muted);min-width:36px;">8%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Fade-down (ms)</label>
+                    <input type="number" id="duckingFadeDown" class="form-input" value="300" min="0" max="2000" step="50">
+                </div>
+                <div class="form-group">
+                    <label>Fade-up (ms)</label>
+                    <input type="number" id="duckingFadeUp" class="form-input" value="600" min="0" max="3000" step="50">
+                </div>
+            </div>
+            <div class="control-actions" style="margin-top:16px;">
+                <button class="btn btn-primary btn-sm" onclick="saveMusicConfig()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Sauvegarder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-ia">
+        <div class="card">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/></svg>
+                Generateur IA de questionnaires
+                <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+                    <span class="ia-form-mode-label">Mode expert</span>
+                    <button class="ia-toggle" id="iaExpertToggle" onclick="iaToggleExpert()" title="Activer le mode expert" role="switch" aria-checked="false"></button>
+                </div>
+            </div>
+
+            <!-- PRESETS RAPIDES -->
+            <div class="ia-section">
+                <div class="ia-section-label">Preset rapide</div>
+                <div class="ia-presets">
+                    <button class="ia-preset" data-preset="culture" onclick="iaApplyPreset('culture')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                        Culture generale
+                    </button>
+                    <button class="ia-preset" data-preset="sport" onclick="iaApplyPreset('sport')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+                        Sport
+                    </button>
+                    <button class="ia-preset" data-preset="cinema" onclick="iaApplyPreset('cinema')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>
+                        Cinema
+                    </button>
+                    <button class="ia-preset" data-preset="science" onclick="iaApplyPreset('science')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+                        Sciences
+                    </button>
+                    <button class="ia-preset" data-preset="histoire" onclick="iaApplyPreset('histoire')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Histoire
+                    </button>
+                    <button class="ia-preset" data-preset="tiktok" onclick="iaApplyPreset('tiktok')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        TikTok Live
+                    </button>
+                </div>
+            </div>
+
+            <!-- BLOC 1 : CONFIGURATION PRINCIPALE -->
+            <div class="ia-section">
+                <div class="ia-section-label">Configuration principale</div>
+                <div class="ia-block">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Theme <span style="color:var(--error)">*</span></label>
+                            <input type="text" id="iaTheme" class="form-input" placeholder="Ex: Capitales du monde, Histoire de France...">
+                        </div>
+                        <div class="form-group ia-expert-field" style="display:none;">
+                            <label>Categorie</label>
+                            <input type="text" id="iaCategory" class="form-input" placeholder="Ex: geographie, histoire...">
+                        </div>
+                        <div class="form-group ia-expert-field" style="display:none;">
+                            <label>Sous-categorie</label>
+                            <input type="text" id="iaSubcategory" class="form-input" placeholder="Ex: Europe, Moyen Age...">
+                        </div>
+                        <div class="form-group">
+                            <label>Difficulte</label>
+                            <div class="ia-radio-group">
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaDifficulty" value="1">
+                                    <span>Facile</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaDifficulty" value="2" checked>
+                                    <span>Moyen</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaDifficulty" value="3">
+                                    <span>Difficile</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Public cible</label>
+                            <div class="ia-radio-group">
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaAudience" value="general" checked>
+                                    <span>General</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaAudience" value="enfants">
+                                    <span>Enfants</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaAudience" value="experts">
+                                    <span>Experts</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaAudience" value="ados">
+                                    <span>Ados</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Langue</label>
+                            <select id="iaLanguage" class="form-input select-input">
+                                <option value="fr" selected>Francais</option>
+                                <option value="en">Anglais</option>
+                                <option value="es">Espagnol</option>
+                                <option value="de">Allemand</option>
+                                <option value="it">Italien</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre de questions</label>
+                            <div class="ia-count-row">
+                                <input type="range" id="iaCountRange" min="5" max="30" step="5" value="10" class="ia-range" oninput="$('#iaCount').value=this.value">
+                                <input type="number" id="iaCount" class="form-input ia-count-num" value="10" min="1" max="30" oninput="$('#iaCountRange').value=this.value">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOC 2 : FORMAT -->
+            <div class="ia-section">
+                <div class="ia-section-label">Format</div>
+                <div class="ia-block">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Style</label>
+                            <div class="ia-radio-group ia-radio-group--wrap">
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaStyle" value="standard" checked>
+                                    <span>Standard</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaStyle" value="anecdote">
+                                    <span>Anecdotes</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaStyle" value="chiffres">
+                                    <span>Chiffres &amp; dates</span>
+                                </label>
+                                <label class="ia-radio-btn">
+                                    <input type="radio" name="iaStyle" value="personnalites">
+                                    <span>Personnalites</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group ia-expert-field" style="display:none;">
+                            <label>Longueur max de question <span class="ia-val-badge" id="iaMaxQlenVal">80</span> car.</label>
+                            <input type="range" id="iaMaxQlen" min="40" max="200" step="10" value="80" class="ia-range" oninput="$('#iaMaxQlenVal').textContent=this.value">
+                        </div>
+                        <div class="form-group ia-expert-field" style="display:none;">
+                            <label>Longueur max des reponses <span class="ia-val-badge" id="iaMaxAlenVal">40</span> car.</label>
+                            <input type="range" id="iaMaxAlen" min="10" max="120" step="5" value="40" class="ia-range" oninput="$('#iaMaxAlenVal').textContent=this.value">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOC 3 : OPTIONS INTELLIGENTES -->
+            <div class="ia-section">
+                <div class="ia-section-label">Options intelligentes</div>
+                <div class="ia-block">
+                    <div class="ia-toggles-grid">
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                Eviter les doublons
+                            </span>
+                            <button class="ia-toggle ia-toggle--active" id="optNoDuplicates" onclick="iaToggleOpt(this)" role="switch" aria-checked="true" data-opt="no_duplicates"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 6 2 12 8 18"/><polyline points="16 6 22 12 16 18"/></svg>
+                                Eviter les reformulations proches
+                            </span>
+                            <button class="ia-toggle" id="optNoRephrase" onclick="iaToggleOpt(this)" role="switch" aria-checked="false" data-opt="no_rephrase"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+                                Varier les angles
+                            </span>
+                            <button class="ia-toggle ia-toggle--active" id="optVaryAngles" onclick="iaToggleOpt(this)" role="switch" aria-checked="true" data-opt="vary_angles"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                Equilibrer les bonnes reponses
+                            </span>
+                            <button class="ia-toggle ia-toggle--active" id="optBalanceAnswers" onclick="iaToggleOpt(this)" role="switch" aria-checked="true" data-opt="balance_answers"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                Optimiser pour TikTok Live
+                            </span>
+                            <button class="ia-toggle ia-toggle--active" id="optTiktokLive" onclick="iaToggleOpt(this)" role="switch" aria-checked="true" data-opt="tiktok_live"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                Privilegier les questions courtes
+                            </span>
+                            <button class="ia-toggle ia-toggle--active" id="optShortQuestions" onclick="iaToggleOpt(this)" role="switch" aria-checked="true" data-opt="short_questions"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                                Mode auto intelligent
+                            </span>
+                            <button class="ia-toggle" id="optAutoMode" onclick="iaToggleOpt(this)" role="switch" aria-checked="false" data-opt="auto_mode"></button>
+                        </label>
+                        <label class="ia-toggle-row">
+                            <span class="ia-toggle-label">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                Mode multi-themes
+                            </span>
+                            <button class="ia-toggle" id="optMultiTheme" onclick="iaToggleOpt(this)" role="switch" aria-checked="false" data-opt="multi_theme"></button>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOC 4 : DESTINATION -->
+            <div class="ia-section">
+                <div class="ia-section-label">Destination</div>
+                <div class="ia-destination">
+                    <div class="ia-dest-options">
+                        <label class="ia-dest-option">
+                            <input type="radio" name="iaDestType" value="new" checked onchange="onIaDestChange()">
+                            <span>Nouveau questionnaire</span>
+                        </label>
+                        <label class="ia-dest-option">
+                            <input type="radio" name="iaDestType" value="existing" onchange="onIaDestChange()">
+                            <span>Questionnaire existant</span>
+                        </label>
+                    </div>
+                    <div id="iaNewQnName" class="form-group" style="margin-top:10px;">
+                        <input type="text" id="iaQnName" class="form-input" placeholder="Nom du nouveau questionnaire (optionnel)">
+                    </div>
+                    <div id="iaExistingQn" style="display:none;margin-top:10px;">
+                        <select id="iaQnSelector" class="form-input select-input"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-actions" style="margin-top:16px;">
+                <button class="btn btn-primary" id="iaBtnGenerate" onclick="iaGenerate()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Generer
+                </button>
+                <button class="btn btn-danger" id="iaBtnCancel" style="display:none;" onclick="iaCancelJob()">
+                    Annuler
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="iaProgressCard" style="display:none;">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Generation en cours
+            </div>
+            <div class="ia-progress-wrap">
+                <div class="ia-progress-bar-bg">
+                    <div class="ia-progress-bar" id="iaProgressBar"></div>
+                </div>
+                <div class="ia-progress-text" id="iaProgressText">Appel a OpenAI...</div>
+            </div>
+        </div>
+
+        <div class="card" id="iaResultCard" style="display:none;">
+            <div class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Questions generees
+                <span class="ia-stats-badge" id="iaStatsBadge"></span>
+            </div>
+            <div class="ia-select-actions">
+                <button class="btn btn-ghost btn-xs" onclick="iaSelectAll(true)">Tout selectionner</button>
+                <button class="btn btn-ghost btn-xs" onclick="iaSelectAll(false)">Tout deselectionner</button>
+                <span class="ia-selected-count" id="iaSelectedCount"></span>
+            </div>
+            <div id="iaCandidatesList"></div>
+            <div class="control-actions" style="margin-top:16px;">
+                <button class="btn btn-success" id="iaBtnConfirm" onclick="iaConfirm()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Enregistrer la selection
+                </button>
+                <button class="btn btn-ghost" onclick="iaReset()">Recommencer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-logs">
+        <div class="logs-card">
+            <div class="logs-header">
+                <div class="logs-header-left">
+                    <span style="font-size:13px;font-weight:600;">Logs</span>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);cursor:pointer;">
+                        <input type="checkbox" id="autoScroll" checked style="accent-color:var(--accent);">
+                        Auto-scroll
+                    </label>
+                </div>
+                <button class="btn btn-ghost btn-xs" onclick="clearLogs()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    Effacer
+                </button>
+            </div>
+            <div class="logs-container" id="logsContainer">
+                <div class="logs-empty" id="logsEmpty">Aucun log pour le moment</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle"></h3>
+            <button class="modal-close" onclick="closeModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>

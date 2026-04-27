@@ -1,0 +1,21 @@
+[Unit]
+Description=TikTok Quiz - SaaS Backend API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/tiktok-quiz-saas
+ExecStart=/opt/tiktok-quiz-saas/venv/bin/gunicorn \
+    --config /opt/tiktok-quiz-saas/deploy/gunicorn.conf.py \
+    "backend.saas.wsgi:app"
+Restart=always
+RestartSec=5
+EnvironmentFile=-/etc/tiktok-quiz-saas/saas.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/tiktok-quiz-saas
+
+[Install]
+WantedBy=multi-user.target

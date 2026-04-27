@@ -62,14 +62,8 @@ class TTSManager:
                     if files and self.ws_server:
                         await self.ws_server.send_music_ducking(True)
                         await self.ws_server.send_audio_play(files)
-                        estimated = self._estimate_duration(files)
-                        file_min = len(files) * 0.8
-                        timeout = max(estimated + 5.0, file_min + 10.0, 15.0)
-                        ended = await self.ws_server.wait_audio_ended(timeout=timeout, num_files=len(files))
-                        if not ended:
-                            print(f"[TTS] Queue audio timeout ({timeout:.1f}s), continuing")
-                        if gap_ms > 0:
-                            await asyncio.sleep(gap_ms / 1000)
+                        total_duration = self._estimate_duration(files)
+                        await asyncio.sleep(total_duration + gap_ms / 1000)
                         await self.ws_server.send_music_ducking(False)
                 except asyncio.CancelledError:
                     if self.ws_server:

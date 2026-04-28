@@ -212,10 +212,9 @@ class GameEngine:
         await self.ws_server.send_game_start(total_q)
         await self.ws_server.broadcast("state_sync", self.get_overlay_snapshot())
 
-        start_delay = cfg.get('game', 'post_start_delay', 3)
-        if start_delay > 0:
-            print(f"[Game] Starting screen shown, waiting {start_delay}s...")
-            await asyncio.sleep(start_delay)
+        start_delay = max(1.0, cfg.get('game', 'post_start_delay', 1.5))
+        print(f"[Startup] post_start_delay={start_delay}s")
+        await asyncio.sleep(start_delay)
 
         await self._play_loop()
 

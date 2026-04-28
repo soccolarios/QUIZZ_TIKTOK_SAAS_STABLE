@@ -10,7 +10,7 @@
     "tiktok_delay": 4,
     "result_display_duration": 10,
     "leaderboard_display_duration": 3,
-    "post_start_delay": 3,
+    "post_start_delay": 1.5,
     "post_countdown_delay": 0.1,
     "auto_start_delay": 0,
     "questionnaire_transition_duration": 8,

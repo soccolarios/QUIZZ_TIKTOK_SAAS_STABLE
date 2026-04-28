@@ -420,12 +420,27 @@ cd "${APP_DIR}"
 npm ci --silent 2>/dev/null || npm install --silent
 
 cat > "${APP_DIR}/.env.production" <<EOF
-VITE_SAAS_API_URL=https://${APP_DOMAIN}
+VITE_SAAS_API_URL=
 EOF
 
 npm run build || fail "Frontend build failed."
 [ -f "${APP_DIR}/dist/index.html" ] || fail "Build produced no dist/index.html."
 ok "Frontend built -> ${APP_DIR}/dist/"
+
+# Build safety: fail if old/test domains leaked into the production bundle
+info "Validating build output for leaked domains..."
+LEAKED_DOMAINS=false
+for BAD_DOMAIN in "alloguide" "myallo"; do
+    if grep -rql "${BAD_DOMAIN}" "${APP_DIR}/dist/" 2>/dev/null; then
+        echo -e "  ${RED}LEAKED DOMAIN: '${BAD_DOMAIN}' found in dist/${NC}"
+        grep -rl "${BAD_DOMAIN}" "${APP_DIR}/dist/" | head -5
+        LEAKED_DOMAINS=true
+    fi
+done
+if "$LEAKED_DOMAINS"; then
+    fail "Build contains hardcoded test domains. Fix .env.production and rebuild."
+fi
+ok "Build clean — no leaked domains"
 
 # =============================================================================
 #  SECTION 9 — Static root placeholders
@@ -455,6 +470,12 @@ mkdir -p "${LOG_DIR}"
 touch "${LOG_DIR}/saas-access.log" "${LOG_DIR}/saas-error.log"
 chown -R www-data:www-data "${LOG_DIR}"
 chmod 755 "${LOG_DIR}"
+chmod 644 "${LOG_DIR}"/*.log
+ok "Log directory: ${LOG_DIR}"
+
+mkdir -p "${APP_DIR}/data/audio" "${APP_DIR}/data/music"
+chown -R www-data:www-data "${APP_DIR}/data"
+ok "Data directories: ${APP_DIR}/data/{audio,music}"
 
 mkdir -p /tmp/gunicorn
 chown www-data:www-data /tmp/gunicorn
@@ -678,7 +699,7 @@ HTTPCONF
 # Generate HTTP-only bootstrap configs
 write_http_bootstrap "${NGINX_PREFIX}-landing" "${LANDING_DOMAIN} www.${LANDING_DOMAIN}" "${LANDING_ROOT}"
 write_http_bootstrap "${NGINX_PREFIX}-app"     "${APP_DOMAIN}"                           "PROXY"
-write_http_bootstrap "${NGINX_PREFIX}-admin"   "${ADMIN_DOMAIN}"                         "${APP_DIR}/dist"
+write_http_bootstrap "${NGINX_PREFIX}-admin"   "${ADMIN_DOMAIN}"                         "PROXY"
 [ -n "${API_DOMAIN}" ] && \
     write_http_bootstrap "${NGINX_PREFIX}-api" "${API_DOMAIN}"                           "STUB_503"
 

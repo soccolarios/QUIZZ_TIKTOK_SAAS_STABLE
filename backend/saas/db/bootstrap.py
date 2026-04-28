@@ -306,6 +306,24 @@ INSERT INTO saas_music_tracks (slug, name, genre, duration_sec, sort_order) VALU
   ('lofi_1',      'Lo-Fi Focus',   'Chill',  240,  40),
   ('retro_1',     'Retro Arcade',  'Retro',  160,  50)
 ON CONFLICT (slug) DO NOTHING;
+
+-- -------------------------------------------------------
+-- platform_config  (admin-managed key/value config store)
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS platform_config (
+  key         text        PRIMARY KEY,
+  value       jsonb       NOT NULL DEFAULT '{}',
+  updated_at  timestamptz NOT NULL DEFAULT now(),
+  updated_by  uuid        REFERENCES saas_users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_platform_config_updated_at
+  ON platform_config(updated_at);
+
+DROP TRIGGER IF EXISTS trg_platform_config_updated_at ON platform_config;
+CREATE TRIGGER trg_platform_config_updated_at
+  BEFORE UPDATE ON platform_config
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 """
 
 

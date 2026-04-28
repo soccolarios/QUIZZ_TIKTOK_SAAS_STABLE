@@ -22,7 +22,9 @@ import type { NavPage } from './components/layout/Sidebar';
 import type { Session } from './api/types';
 import { isActiveStatus } from './utils/sessionStatus';
 
-const isAdminPath = window.location.pathname.startsWith('/admin');
+const isAdminMode =
+  window.location.hostname.startsWith('admin.') ||
+  window.location.pathname.startsWith('/admin');
 
 type AuthView = 'landing' | 'login' | 'register';
 
@@ -147,7 +149,7 @@ function Dashboard() {
 function AppInner() {
   const { user, loading } = useAuth();
 
-  if (isAdminPath) return <AdminApp />;
+  if (isAdminMode) return <AdminApp />;
 
   if (loading) return <PageSpinner />;
   if (!user) return <AuthGate />;

@@ -3,6 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { AdminLayout } from './AdminLayout';
 import { AdminDashboardPage } from './AdminDashboardPage';
 import { AdminPlaceholderPage } from './AdminPlaceholderPage';
+import { SiteConfigPage } from './SiteConfigPage';
+import { PricingPlansPage } from './PricingPlansPage';
+import { FeatureFlagsPage } from './FeatureFlagsPage';
 import type { AdminPage } from './AdminSidebar';
 import { ShieldAlert, LogIn } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -98,9 +101,10 @@ function AdminDashboard() {
   const [page, setPage] = useState<AdminPage>('dashboard');
 
   const renderPage = () => {
-    if (page === 'dashboard') {
-      return <AdminDashboardPage onNavigate={setPage} />;
-    }
+    if (page === 'dashboard') return <AdminDashboardPage onNavigate={setPage} />;
+    if (page === 'site-config') return <SiteConfigPage />;
+    if (page === 'pricing-plans') return <PricingPlansPage />;
+    if (page === 'feature-flags') return <FeatureFlagsPage />;
     return <AdminPlaceholderPage moduleId={page} />;
   };
 

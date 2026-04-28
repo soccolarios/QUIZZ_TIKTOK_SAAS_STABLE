@@ -387,6 +387,10 @@ class MusicPlayer {
     }
 
     stop() {
+        if (this._duckFadeRaf) {
+            cancelAnimationFrame(this._duckFadeRaf);
+            this._duckFadeRaf = null;
+        }
         if (this._audio) {
             this._audio.pause();
             this._audio.currentTime = 0;
@@ -405,10 +409,11 @@ class MusicPlayer {
             this._audio.onerror = null;
             this._audio = null;
         }
-        if (this._duckFadeInterval) {
-            clearInterval(this._duckFadeInterval);
-            this._duckFadeInterval = null;
+        if (this._duckFadeRaf) {
+            cancelAnimationFrame(this._duckFadeRaf);
+            this._duckFadeRaf = null;
         }
+        this._fadeId = 0;
         this._isPlaying = false;
         this._savedPosition = 0;
         this._isDucked = false;
@@ -434,6 +439,7 @@ class MusicPlayer {
         if (!this._config.ducking.enabled || !this._audio || this._isDucked) return;
         this._isDucked = true;
         if (!this._masterMuted) {
+            console.log('[Music] Ducking fade start');
             this._fadeTo(this._config.ducking.volume_during_speech, this._config.ducking.fade_down_ms);
         }
     }
@@ -442,34 +448,39 @@ class MusicPlayer {
         if (!this._config.ducking.enabled || !this._audio || !this._isDucked) return;
         this._isDucked = false;
         if (!this._masterMuted) {
+            console.log('[Music] Restore fade start');
             this._fadeTo(this._config.volume, this._config.ducking.fade_up_ms);
         }
     }
 
     _fadeTo(targetVol, durationMs) {
-        if (this._duckFadeInterval) {
-            clearInterval(this._duckFadeInterval);
-            this._duckFadeInterval = null;
+        this._fadeId = (this._fadeId || 0) + 1;
+        const fadeId = this._fadeId;
+        if (this._duckFadeRaf) {
+            cancelAnimationFrame(this._duckFadeRaf);
+            this._duckFadeRaf = null;
         }
         if (!this._audio) return;
+        const clamp = v => Math.max(0, Math.min(1, v));
         if (durationMs <= 0) {
-            this._audio.volume = Math.max(0, Math.min(1, targetVol));
+            this._audio.volume = clamp(targetVol);
             return;
         }
-        const steps = Math.max(1, Math.floor(durationMs / 20));
         const startVol = this._audio.volume;
-        const delta = (targetVol - startVol) / steps;
-        let step = 0;
-        this._duckFadeInterval = setInterval(() => {
-            step++;
-            if (!this._audio) { clearInterval(this._duckFadeInterval); return; }
-            this._audio.volume = Math.max(0, Math.min(1, startVol + delta * step));
-            if (step >= steps) {
-                clearInterval(this._duckFadeInterval);
-                this._duckFadeInterval = null;
-                if (this._audio) this._audio.volume = Math.max(0, Math.min(1, targetVol));
+        const startTime = performance.now();
+        const ease = t => t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+        const tick = (now) => {
+            if (this._fadeId !== fadeId || !this._audio) return;
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / durationMs);
+            this._audio.volume = clamp(startVol + (targetVol - startVol) * ease(progress));
+            if (progress < 1) {
+                this._duckFadeRaf = requestAnimationFrame(tick);
+            } else {
+                this._duckFadeRaf = null;
             }
-        }, 20);
+        };
+        this._duckFadeRaf = requestAnimationFrame(tick);
     }
 
     handleCommand(command, data) {

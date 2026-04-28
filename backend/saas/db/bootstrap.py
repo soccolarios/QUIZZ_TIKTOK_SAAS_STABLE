@@ -389,6 +389,19 @@ CREATE TABLE IF NOT EXISTS email_log (
 CREATE INDEX IF NOT EXISTS idx_email_log_user_id ON email_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_email_log_template_key ON email_log(template_key);
 CREATE INDEX IF NOT EXISTS idx_email_log_created_at ON email_log(created_at);
+
+-- -------------------------------------------------------
+-- auth_rate_limits  (per-action, per-identifier rate tracking)
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS auth_rate_limits (
+  id          bigserial   PRIMARY KEY,
+  action      text        NOT NULL,
+  identifier  text        NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_action_identifier
+  ON auth_rate_limits(action, identifier, created_at);
 """
 
 

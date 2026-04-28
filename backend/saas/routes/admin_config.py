@@ -1,19 +1,31 @@
 """
-Admin config routes — Super Admin only.
+Admin config routes -- Super Admin only.
 
-GET  /api/admin/config/<key>   — read a config namespace
-PUT  /api/admin/config/<key>   — upsert a config namespace
+GET  /api/admin/config/<key>   -- read a config namespace
+PUT  /api/admin/config/<key>   -- upsert a config namespace
+POST /api/admin/config/test-email -- send a test email
 
 Keys: site_config, plans, feature_flags, mailjet
+
+Security:
+  - Mailjet secrets are masked on read (write-only)
+  - PUT preserves existing secrets when masked placeholder values are sent
+  - Test email is rate-limited
 """
 
 import json
+import logging
 from flask import Blueprint, request as req
 from backend.saas.auth.middleware import require_auth
 from backend.saas.db.base import fetch_one, execute
 from backend.saas.utils.responses import success, error
 
+logger = logging.getLogger(__name__)
 bp = Blueprint("admin_config", __name__, url_prefix="/api/admin/config")
+
+ALLOWED_KEYS = {"site_config", "plans", "feature_flags", "mailjet"}
+
+_MASK_PLACEHOLDER = "********"
 
 
 def _require_admin():
@@ -23,7 +35,57 @@ def _require_admin():
     return None
 
 
-ALLOWED_KEYS = {"site_config", "plans", "feature_flags", "mailjet"}
+def _mask_secret(value: str | None) -> str:
+    """Mask a secret key for display. Shows first 4 + last 4 chars if long enough."""
+    if not value:
+        return ""
+    if len(value) <= 8:
+        return _MASK_PLACEHOLDER
+    return value[:4] + _MASK_PLACEHOLDER + value[-4:]
+
+
+def _mask_mailjet_config(cfg: dict | None) -> dict | None:
+    """Return a copy of the mailjet config with secrets masked."""
+    if not cfg:
+        return cfg
+    masked = dict(cfg)
+    if masked.get("api_key"):
+        masked["api_key"] = _mask_secret(masked["api_key"])
+    if masked.get("secret_key"):
+        masked["secret_key"] = _mask_secret(masked["secret_key"])
+    masked["_secrets_masked"] = True
+    return masked
+
+
+def _is_masked_value(value: str | None) -> bool:
+    """Check if a value is a masked placeholder (should not be persisted)."""
+    if not value:
+        return False
+    return _MASK_PLACEHOLDER in value
+
+
+def _merge_mailjet_secrets(new_config: dict, existing_config: dict | None) -> dict:
+    """
+    Preserve existing secrets when the admin submits masked/unchanged values.
+
+    If the admin sends a value containing the mask placeholder, we keep the
+    existing stored value. This makes secrets write-only: you can set a new
+    one, but reading always returns masked.
+    """
+    if not existing_config:
+        return new_config
+
+    merged = dict(new_config)
+    merged.pop("_secrets_masked", None)
+
+    for secret_field in ("api_key", "secret_key"):
+        submitted = merged.get(secret_field, "")
+        if _is_masked_value(submitted) or submitted == "":
+            existing_val = existing_config.get(secret_field)
+            if existing_val:
+                merged[secret_field] = existing_val
+
+    return merged
 
 
 @bp.get("/<key>")
@@ -43,9 +105,14 @@ def get_config(key: str):
     if not row:
         return success({"key": key, "value": None, "updated_at": None})
 
+    value = row["value"]
+
+    if key == "mailjet":
+        value = _mask_mailjet_config(value)
+
     return success({
         "key": key,
-        "value": row["value"],
+        "value": value,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     })
 
@@ -66,6 +133,13 @@ def put_config(key: str):
 
     value = body["value"]
 
+    if key == "mailjet" and isinstance(value, dict):
+        existing_row = fetch_one(
+            "SELECT value FROM platform_config WHERE key = 'mailjet'",
+        )
+        existing_config = existing_row["value"] if existing_row else None
+        value = _merge_mailjet_secrets(value, existing_config)
+
     from flask import g
     user_id = g.current_user_id
 
@@ -81,16 +155,24 @@ def put_config(key: str):
         (key, json.dumps(value), user_id),
     )
 
+    logger.info("Admin config updated: key=%s by user=%s", key, user_id)
     return success({"key": key, "saved": True})
 
 
 @bp.post("/test-email")
 @require_auth
 def test_email():
-    """Send a test email to verify Mailjet configuration."""
+    """Send a test email to verify Mailjet configuration. Rate-limited."""
     denied = _require_admin()
     if denied:
         return denied
+
+    from flask import g
+    from backend.saas.services.rate_limiter import check_rate_limit, record_attempt
+
+    admin_id = str(g.current_user_id)
+    if not check_rate_limit("test_email", admin_id, max_attempts=3, window_seconds=300):
+        return error("Too many test emails. Please wait a few minutes.", 429)
 
     body = req.get_json(silent=True) or {}
     to_email = (body.get("email") or "").strip()
@@ -99,6 +181,8 @@ def test_email():
 
     from backend.saas.services.email_templates import render_test_email
     from backend.saas.services.email_service import send_email
+
+    record_attempt("test_email", admin_id)
 
     subject, html, text = render_test_email(to_email)
     sent = send_email(

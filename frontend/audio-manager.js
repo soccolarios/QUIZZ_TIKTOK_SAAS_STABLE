@@ -394,6 +394,26 @@ class MusicPlayer {
         console.log('[Music] Stopped');
     }
 
+    resetSession() {
+        if (this._audio) {
+            this._audio.pause();
+            this._audio.onended = null;
+            this._audio.onerror = null;
+            this._audio = null;
+        }
+        if (this._duckFadeInterval) {
+            clearInterval(this._duckFadeInterval);
+            this._duckFadeInterval = null;
+        }
+        this._isPlaying = false;
+        this._savedPosition = 0;
+        this._isDucked = false;
+        this._tracks = [];
+        this._currentIndex = 0;
+        this._shuffleOrder = [];
+        console.log('[Music] Session reset');
+    }
+
     _nextTrack() {
         if (!this._tracks.length) return;
         this._currentIndex = (this._currentIndex + 1) % this._tracks.length;

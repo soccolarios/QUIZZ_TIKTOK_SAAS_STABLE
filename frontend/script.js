@@ -42,6 +42,7 @@ class QuizOverlay {
         this._saasToken = window.__SAAS_OVERLAY_TOKEN || null;
         this._saasConfigLoaded = false;
         this._saasWsUrl = null;
+        this._lastConnectedWsUrl = null;
 
         this._previewMode = new URLSearchParams(window.location.search).has('preview');
         if (this._previewMode) {
@@ -461,6 +462,16 @@ class QuizOverlay {
         const wasReconnect = this.reconnectAttempts > 0;
         this.log('WS', `Connected${wasReconnect ? ` (reconnected after ${this.reconnectAttempts} attempt(s))` : ''}`);
         this.reconnectAttempts = 0;
+
+        const currentWsUrl = this._saasWsUrl || this._buildWsUrl();
+        const sessionChanged = this._lastConnectedWsUrl && currentWsUrl !== this._lastConnectedWsUrl;
+        this._lastConnectedWsUrl = currentWsUrl;
+
+        if (sessionChanged && !this._previewMode) {
+            this.log('WS', 'Session changed — resetting music state');
+            this.music.resetSession();
+        }
+
         if (wasReconnect) {
             this.log('WS', 'Restoring session state via snapshot...');
             this._fetchAndApplySnapshot();
@@ -697,7 +708,10 @@ class QuizOverlay {
         this._gameStarted = true;
         this.elements.questionTotal.textContent = data.total_questions;
         this.sessionLeaderboard = [];
-        if (!this._previewMode) this.music.onGameStart();
+        if (!this._previewMode) {
+            this.music.resetSession();
+            this._loadMusicConfig().then(() => this.music.onGameStart());
+        }
         this.showScreen(UIState.STARTING);
     }
 

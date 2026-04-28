@@ -5,7 +5,7 @@
 | Action | Free | Pro | Premium | Backend Enforcement | Frontend Enforcement |
 |--------|------|-----|---------|---------------------|----------------------|
 | Create project (over limit) | 1 max | 10 max | 100 max | `plan_guard.check_can_create_project()` -> 403 | "New project" button disabled at limit |
-| Create quiz (over limit per project) | 3 max | 50 max | 500 max | `plan_guard.check_can_create_quiz()` -> 403 | Backend 403 shown via toast |
+| Create quiz (over limit per project) | 3 max | 50 max | 500 max | `plan_guard.check_can_create_quiz()` -> 403 | "New quiz" + "Import" buttons disabled at limit + lock icon + upgrade hint |
 | Start session (over active limit) | 1 max | 5 max | 20 max | `plan_guard.check_can_start_session()` -> 403 | Backend 403 shown via toast |
 
 ## Feature Flags (Plan-Based)
@@ -13,9 +13,9 @@
 | Feature | Free | Pro | Premium | Backend Enforcement | Frontend Enforcement |
 |---------|------|-----|---------|---------------------|----------------------|
 | X2 bonus mechanic | Blocked | Allowed | Allowed | `check_can_start_session(x2_requested=True)` -> 403 | Toggle disabled + lock icon + upgrade hint |
-| TTS voice narration | Blocked | Allowed | Allowed | `check_can_use_tts()` -> 403 in `set_session_tts` + silently downgraded at launch | Toggle disabled + lock icon + upgrade hint |
+| TTS voice narration | Blocked | Allowed | Allowed | `check_can_use_tts()` -> 403 in `set_session_tts` + 403 at launch if requested | Toggle disabled + lock icon + upgrade hint |
 | AI quiz generation | Blocked | Allowed | Allowed | `check_can_use_ai()` -> 403 in `/api/ai/generate` | Full page lock with upgrade prompt |
-| Music selection | Blocked | Allowed | Allowed | `check_can_use_music()` -> 403 in `/api/music/` + silently downgraded at launch | Music API 403 caught -> empty list shown |
+| Music selection | Blocked | Allowed | Allowed | `check_can_use_music()` -> 403 in `/api/music/` + 403 at launch if requested | Music API 403 caught -> empty list shown |
 
 ## Global Admin Overrides
 
@@ -40,6 +40,8 @@ When a Super Admin disables a feature globally via Feature Flags in the admin pa
 2. **Quiz cap**
    - In a project, create 3 quizzes -> success
    - Create 4th quiz -> 403 "Your plan allows up to 3 quiz(zes) per project."
+   - "New quiz" and "Import" buttons disabled with lock icon when filtering by that project
+   - Quota badge shows "3/3 quizzes"
 
 3. **Session cap**
    - Start 1 session -> success
@@ -56,12 +58,12 @@ When a Super Admin disables a feature globally via Feature Flags in the admin pa
 6. **TTS denied**
    - POST /api/sessions/:id/audio/tts {enabled: true} -> 403
    - Toggle in launch UI is disabled with lock icon
-   - Launch with no_tts=false -> silently downgraded to no_tts=true
+   - Launch with no_tts=false -> 403 "not available on the Free plan"
 
 7. **Music denied**
    - GET /api/music/ -> 403
    - Music section shows "No music tracks available"
-   - Launch with music_track_slug="energetic_1" -> silently downgraded to "none"
+   - Launch with music_track_slug="energetic_1" -> 403 "not available on the Free plan"
 
 ### PRO Plan Tests
 

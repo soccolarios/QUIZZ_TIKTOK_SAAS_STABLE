@@ -210,11 +210,11 @@ _PLAY_MODE_MAP = {
 _MULTI_QUIZ_MODES = {"sequential", "loop_all"}
 
 
-def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id: str, user_id: str | None = None) -> tuple[dict, str, bool, list]:
+def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id: str, user_id: str | None = None) -> tuple[dict | None, str | None, bool | None, list | None]:
     """
     Parse and validate launch-time parameters from the request body.
     Returns (launch_options, tiktok_username, simulation_mode, all_quiz_ids).
-    Silently downgrades TTS/music if the user's plan doesn't allow them.
+    Returns (None, error_message, None, None) if a plan check fails.
     """
     raw_play_mode = (data.get("play_mode") or "single").strip()
     play_mode = _PLAY_MODE_MAP.get(raw_play_mode, "single")
@@ -237,13 +237,13 @@ def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id
 
     if user_id:
         if not no_tts:
-            tts_ok, _ = check_can_use_tts(user_id)
+            tts_ok, tts_msg = check_can_use_tts(user_id)
             if not tts_ok:
-                no_tts = True
+                return None, tts_msg, None, None
         if music_track_slug != "none":
-            music_ok, _ = check_can_use_music(user_id)
+            music_ok, music_msg = check_can_use_music(user_id)
             if not music_ok:
-                music_track_slug = "none"
+                return None, music_msg, None, None
 
     launch_options = {
         "tiktok_username": tiktok_username,
@@ -369,9 +369,12 @@ def start_session():
         if not allowed:
             return error(guard_msg, 403)
 
-        launch_options, tiktok_username, simulation_mode, _ = _resolve_launch_options(
+        resolve_result = _resolve_launch_options(
             data, quiz_id, quiz_row, project_id, user_id=g.current_user_id
         )
+        if resolve_result[0] is None:
+            return error(resolve_result[1], 403)
+        launch_options, tiktok_username, simulation_mode, _ = resolve_result
 
         update_session_launch_options(
             session_id_from_body, tiktok_username, simulation_mode, launch_options
@@ -421,9 +424,12 @@ def start_session():
     if not allowed:
         return error(guard_msg, 403)
 
-    launch_options, tiktok_username, simulation_mode, _ = _resolve_launch_options(
+    resolve_result = _resolve_launch_options(
         data, quiz_id, quiz_row, project_id, user_id=g.current_user_id
     )
+    if resolve_result[0] is None:
+        return error(resolve_result[1], 403)
+    launch_options, tiktok_username, simulation_mode, _ = resolve_result
 
     reuse_token = (data.get("overlay_token") or "").strip() or None
     reuse_short_code = (data.get("short_code") or "").strip() or None

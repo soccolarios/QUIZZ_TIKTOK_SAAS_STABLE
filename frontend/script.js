@@ -44,6 +44,7 @@ class QuizOverlay {
         this._saasWsUrl = null;
         this._lastConnectedWsUrl = null;
 
+        this._activeServerSequenceId = null;
         this._previewMode = new URLSearchParams(window.location.search).has('preview');
         if (this._previewMode) {
             console.log('[Overlay] Preview mode active - audio disabled');
@@ -649,10 +650,19 @@ class QuizOverlay {
         const token = data.token || null;
         const sequenceId = data.sequence_id || null;
         if (files.length > 0) {
+            if (this._activeServerSequenceId) {
+                this.log('Audio', `Sequence superseded (old=${this._activeServerSequenceId}, new=${sequenceId})`);
+            }
+            this._activeServerSequenceId = sequenceId;
+            this.audio.stopSequence();
             this.log('AUDIO', `Playing sequence: ${files.length} file(s), token=${token}, sequence_id=${sequenceId}`);
             this.audio._sequenceId++;
             const mySeqId = this.audio._sequenceId;
             this.audio._playSequenceWithId(files, mySeqId).then((completed) => {
+                if (this._activeServerSequenceId !== sequenceId) {
+                    this.log('AUDIO', `audio_ended suppressed (stale sequence_id=${sequenceId}, active=${this._activeServerSequenceId})`);
+                    return;
+                }
                 if (!completed) {
                     this.log('AUDIO', `audio_ended suppressed (sequence interrupted, sequence_id=${sequenceId})`);
                     return;
@@ -671,6 +681,7 @@ class QuizOverlay {
         this.log('UI', `Transition: ${this.uiState} -> ${screenName}`);
 
         if (this.uiState !== screenName && !preserveAudio) {
+            this._activeServerSequenceId = null;
             this.audio.stopAll();
         }
 

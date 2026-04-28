@@ -117,13 +117,15 @@ class AudioManager {
     }
 
     stopAll() {
+        this.stopSequence();
         Object.keys(this.currentlyPlaying).forEach(name => {
-            if (name !== '_sequence') this.stop(name);
+            this.stop(name);
         });
-        console.log('[AUDIO] Stopped UI sounds (TTS sequence preserved)');
+        console.log('[Audio] Stopped all sounds and sequences');
     }
 
     stopSequence() {
+        const hadActive = !!this.currentlyPlaying['_sequence'];
         this._sequenceId++;
         const seq = this.currentlyPlaying['_sequence'];
         if (seq) {
@@ -131,7 +133,9 @@ class AudioManager {
             seq.currentTime = 0;
             delete this.currentlyPlaying['_sequence'];
         }
-        console.log('[AUDIO] Stopped TTS sequence');
+        if (hadActive) {
+            console.log('[Audio] Sequence cancelled');
+        }
     }
 
     async playSequence(files) {

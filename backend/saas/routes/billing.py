@@ -8,6 +8,7 @@ from backend.saas.models.subscription import (
     get_subscription_by_user,
     get_subscription_by_stripe_customer,
     get_subscription_by_stripe_subscription,
+    get_effective_plan_code,
     upsert_subscription,
     set_stripe_customer_id,
     log_billing_event,
@@ -33,14 +34,20 @@ _APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5173")
 
 
 def _subscription_response(sub: dict | None, user_id: str) -> dict:
-    plan_code = (sub["plan_code"] if sub else "free") or "free"
-    limits = get_plan(plan_code)
+    effective = get_effective_plan_code(user_id)
+    limits = get_plan(effective)
+    raw_plan = (sub["plan_code"] if sub else "free") or "free"
+    is_overridden = sub and sub.get("admin_override_plan") is not None
+    is_suspended = sub and sub.get("suspended_at") is not None
     return {
-        "plan_code": plan_code,
+        "plan_code": effective,
+        "stripe_plan_code": raw_plan,
         "display_name": limits.display_name,
-        "status": sub["status"] if sub else "active",
+        "status": "suspended" if is_suspended else (sub["status"] if sub else "active"),
         "current_period_end": sub["current_period_end"].isoformat() if sub and sub.get("current_period_end") else None,
         "cancel_at_period_end": sub["cancel_at_period_end"] if sub else False,
+        "admin_override": is_overridden,
+        "suspended": bool(is_suspended),
         "limits": {
             "max_active_sessions": limits.max_active_sessions,
             "max_projects": limits.max_projects,

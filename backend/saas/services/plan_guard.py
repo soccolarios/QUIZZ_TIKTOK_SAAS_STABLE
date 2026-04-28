@@ -9,7 +9,7 @@ They read the DB directly so they cannot be bypassed by manipulating the UI.
 import logging
 
 from backend.saas.config.plans import get_plan
-from backend.saas.models.subscription import get_subscription_by_user
+from backend.saas.models.subscription import get_effective_plan_code
 from backend.saas.models.session import get_active_session_count
 from backend.saas.models.project import get_project_count_by_user
 from backend.saas.models.quiz import get_quiz_count_by_project
@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_plan_limits(user_id: str):
-    sub = get_subscription_by_user(user_id)
-    plan_code = sub["plan_code"] if sub else "free"
+    plan_code = get_effective_plan_code(user_id)
     return get_plan(plan_code), plan_code
 
 

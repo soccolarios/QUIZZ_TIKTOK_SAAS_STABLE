@@ -58,3 +58,49 @@ export interface FeatureFlagsConfig {
   musicEnabled: boolean;
   [key: string]: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Admin Billing
+// ---------------------------------------------------------------------------
+
+export interface AdminSubscription {
+  id: string;
+  user_id: string;
+  email: string;
+  user_is_active: boolean;
+  plan_code: string;
+  effective_plan: string;
+  status: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  admin_override_plan: string | null;
+  admin_override_reason: string | null;
+  admin_override_by: string | null;
+  admin_override_at: string | null;
+  suspended_at: string | null;
+  suspended_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const adminBillingApi = {
+  listSubscriptions: () =>
+    api.get<AdminSubscription[]>('/api/admin/billing/subscriptions'),
+
+  getSubscription: (userId: string) =>
+    api.get<AdminSubscription>(`/api/admin/billing/subscriptions/${userId}`),
+
+  setOverride: (userId: string, planCode: string | null, reason: string) =>
+    api.post<AdminSubscription>(`/api/admin/billing/subscriptions/${userId}/override`, {
+      plan_code: planCode,
+      reason,
+    }),
+
+  setSuspended: (userId: string, suspended: boolean, reason: string) =>
+    api.post<AdminSubscription>(`/api/admin/billing/subscriptions/${userId}/suspend`, {
+      suspended,
+      reason,
+    }),
+};

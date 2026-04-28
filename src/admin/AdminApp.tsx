@@ -6,6 +6,7 @@ import { AdminPlaceholderPage } from './AdminPlaceholderPage';
 import { SiteConfigPage } from './SiteConfigPage';
 import { PricingPlansPage } from './PricingPlansPage';
 import { FeatureFlagsPage } from './FeatureFlagsPage';
+import { AdminBillingPage } from './AdminBillingPage';
 import type { AdminPage } from './AdminSidebar';
 import { ShieldAlert, LogIn } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -106,6 +107,7 @@ function AdminDashboard() {
     if (page === 'site-config') return <SiteConfigPage />;
     if (page === 'pricing-plans') return <PricingPlansPage />;
     if (page === 'feature-flags') return <FeatureFlagsPage />;
+    if (page === 'subscriptions') return <AdminBillingPage />;
     return <AdminPlaceholderPage moduleId={page} />;
   };
 

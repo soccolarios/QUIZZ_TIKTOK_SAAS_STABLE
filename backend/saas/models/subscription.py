@@ -1,18 +1,16 @@
 import json
 import logging
-from backend.saas.db.base import fetch_one, execute
+from backend.saas.db.base import fetch_one, fetch_all, execute
 
 logger = logging.getLogger(__name__)
+
+# Subscription statuses that grant paid-plan access
+_ACTIVE_STATUSES = {"active", "trialing"}
 
 
 def get_subscription_by_user(user_id: str) -> dict | None:
     return fetch_one(
-        """
-        SELECT id, user_id, stripe_customer_id, stripe_subscription_id,
-               stripe_price_id, plan_code, status, current_period_start,
-               current_period_end, cancel_at_period_end, created_at, updated_at
-        FROM saas_subscriptions WHERE user_id = %s
-        """,
+        "SELECT * FROM saas_subscriptions WHERE user_id = %s",
         (user_id,),
     )
 
@@ -28,6 +26,128 @@ def get_subscription_by_stripe_subscription(stripe_subscription_id: str) -> dict
     return fetch_one(
         "SELECT * FROM saas_subscriptions WHERE stripe_subscription_id = %s",
         (stripe_subscription_id,),
+    )
+
+
+def get_effective_plan_code(user_id: str) -> str:
+    """
+    Resolve the plan that should actually be enforced for this user.
+
+    Priority order (highest wins):
+      1. Suspended -> always "free"
+      2. Admin override -> admin_override_plan
+      3. Subscription status not active/trialing -> "free"
+      4. Stripe-managed plan_code from saas_subscriptions
+      5. No subscription row -> "free"
+
+    This is the SINGLE authority for plan enforcement. plan_guard.py uses this.
+    """
+    sub = get_subscription_by_user(user_id)
+    if not sub:
+        return "free"
+
+    if sub.get("suspended_at") is not None:
+        return "free"
+
+    override = sub.get("admin_override_plan")
+    if override:
+        return override
+
+    status = sub.get("status") or "active"
+    if status not in _ACTIVE_STATUSES:
+        return "free"
+
+    return sub.get("plan_code") or "free"
+
+
+def set_admin_override(
+    user_id: str,
+    plan_code: str | None,
+    reason: str,
+    admin_user_id: str,
+) -> dict:
+    """Set or clear an admin plan override for a user."""
+    sub = get_subscription_by_user(user_id)
+    if not sub:
+        upsert_subscription(user_id=user_id, plan_code="free", status="active")
+
+    result = fetch_one(
+        """
+        UPDATE saas_subscriptions
+        SET admin_override_plan = %s,
+            admin_override_reason = %s,
+            admin_override_by = %s,
+            admin_override_at = CASE WHEN %s IS NOT NULL THEN now() ELSE NULL END,
+            updated_at = now()
+        WHERE user_id = %s
+        RETURNING *
+        """,
+        (plan_code, reason, admin_user_id, plan_code, user_id),
+    )
+    effective = get_effective_plan_code(user_id)
+    _sync_user_plan_code(user_id, effective)
+    return result
+
+
+def set_suspended(user_id: str, suspended: bool, reason: str, admin_user_id: str) -> dict:
+    """Suspend or unsuspend a user's account."""
+    sub = get_subscription_by_user(user_id)
+    if not sub:
+        upsert_subscription(user_id=user_id, plan_code="free", status="active")
+
+    if suspended:
+        result = fetch_one(
+            """
+            UPDATE saas_subscriptions
+            SET suspended_at = now(),
+                suspended_reason = %s,
+                updated_at = now()
+            WHERE user_id = %s
+            RETURNING *
+            """,
+            (reason, user_id),
+        )
+    else:
+        result = fetch_one(
+            """
+            UPDATE saas_subscriptions
+            SET suspended_at = NULL,
+                suspended_reason = NULL,
+                updated_at = now()
+            WHERE user_id = %s
+            RETURNING *
+            """,
+            (user_id,),
+        )
+    effective = get_effective_plan_code(user_id)
+    _sync_user_plan_code(user_id, effective)
+    return result
+
+
+def list_subscriptions(limit: int = 100, offset: int = 0) -> list[dict]:
+    """List all subscriptions with user email for admin view."""
+    return fetch_all(
+        """
+        SELECT s.*, u.email, u.is_active AS user_is_active
+        FROM saas_subscriptions s
+        JOIN saas_users u ON u.id = s.user_id
+        ORDER BY s.updated_at DESC
+        LIMIT %s OFFSET %s
+        """,
+        (limit, offset),
+    )
+
+
+def get_subscription_with_user(user_id: str) -> dict | None:
+    """Get subscription joined with user info for admin display."""
+    return fetch_one(
+        """
+        SELECT s.*, u.email, u.is_active AS user_is_active
+        FROM saas_subscriptions s
+        JOIN saas_users u ON u.id = s.user_id
+        WHERE s.user_id = %s
+        """,
+        (user_id,),
     )
 
 
@@ -125,10 +245,9 @@ def upsert_subscription(
             ),
         )
 
-    effective_plan = plan_code if plan_code is not None else (existing.get("plan_code") if existing else "free")
-    logger.info("upsert_subscription complete user=%s effective_plan=%s", user_id, effective_plan)
-    if plan_code is not None:
-        _sync_user_plan_code(user_id, plan_code)
+    effective = get_effective_plan_code(user_id)
+    logger.info("upsert_subscription complete user=%s effective_plan=%s", user_id, effective)
+    _sync_user_plan_code(user_id, effective)
     return result
 
 

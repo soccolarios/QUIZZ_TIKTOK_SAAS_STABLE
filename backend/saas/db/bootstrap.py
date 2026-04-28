@@ -241,12 +241,40 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
   current_period_start   timestamptz,
   current_period_end     timestamptz,
   cancel_at_period_end   boolean NOT NULL DEFAULT false,
+  admin_override_plan    text,
+  admin_override_reason  text,
+  admin_override_by      uuid REFERENCES saas_users(id),
+  admin_override_at      timestamptz,
+  suspended_at           timestamptz,
+  suspended_reason       text,
   created_at             timestamptz NOT NULL DEFAULT now(),
   updated_at             timestamptz NOT NULL DEFAULT now(),
   UNIQUE (user_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_saas_subscriptions_user_id ON saas_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_saas_subscriptions_status ON saas_subscriptions(status);
+
+-- Idempotent: add admin override and suspension columns for existing deployments
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'saas_subscriptions' AND column_name = 'admin_override_plan'
+  ) THEN
+    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_plan text;
+    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_reason text;
+    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_by uuid REFERENCES saas_users(id);
+    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_at timestamptz;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'saas_subscriptions' AND column_name = 'suspended_at'
+  ) THEN
+    ALTER TABLE saas_subscriptions ADD COLUMN suspended_at timestamptz;
+    ALTER TABLE saas_subscriptions ADD COLUMN suspended_reason text;
+  END IF;
+END $$;
 
 DROP TRIGGER IF EXISTS trg_saas_subscriptions_updated_at ON saas_subscriptions;
 CREATE TRIGGER trg_saas_subscriptions_updated_at

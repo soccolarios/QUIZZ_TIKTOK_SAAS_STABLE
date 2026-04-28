@@ -86,6 +86,74 @@ When a Super Admin disables a feature globally via Feature Flags in the admin pa
 4. Re-enable AI -> Pro user can generate again
 5. Repeat for TTS, X2, Music
 
+## Billing Authority & Plan Sync
+
+### Effective Plan Resolution
+
+`get_effective_plan_code(user_id)` is the SINGLE source of truth. Priority chain:
+
+| Priority | Condition | Effective Plan |
+|----------|-----------|----------------|
+| 1 (highest) | `suspended_at IS NOT NULL` | `free` |
+| 2 | `admin_override_plan IS NOT NULL` | override value |
+| 3 | `status NOT IN (active, trialing)` | `free` |
+| 4 | Normal | Stripe `plan_code` |
+| 5 (fallback) | No subscription row | `free` |
+
+### Stripe Webhook Events
+
+| Event | Action | Safety |
+|-------|--------|--------|
+| `checkout.session.completed` | Resolve price_id -> plan_code, upsert subscription | Fails safely if price_id unknown |
+| `customer.subscription.updated` | Sync plan_code + status from Stripe | Skips plan_code update if price_id unknown |
+| `customer.subscription.deleted` | Set plan_code=free, status=canceled | Always downgrades |
+| `invoice.paid` | Log event | No plan change |
+| `invoice.payment_failed` | Set status=past_due (keeps plan_code) | Effective plan resolves to free via status check |
+
+### Admin Billing Controls
+
+| Action | Route | Effect |
+|--------|-------|--------|
+| Set plan override | `POST /api/admin/billing/subscriptions/:id/override` | Sets `admin_override_plan`, takes precedence over Stripe |
+| Clear override | Same route with `plan_code: null` | Restores Stripe-managed plan |
+| Suspend account | `POST /api/admin/billing/subscriptions/:id/suspend` | Sets `suspended_at`, immediately restricts to free |
+| Unsuspend account | Same route with `suspended: false` | Clears `suspended_at`, restores previous effective plan |
+
+All admin actions require reason text and are logged to `billing_events`.
+
+### Billing Security Tests
+
+1. **Expired subscription**
+   - Stripe sends `customer.subscription.deleted` -> status=canceled
+   - User's effective plan -> free immediately
+   - All paid features return 403
+
+2. **Payment failure**
+   - Stripe sends `invoice.payment_failed` -> status=past_due
+   - Effective plan -> free (status not in active/trialing)
+   - User retains plan_code for when payment succeeds
+
+3. **Admin override**
+   - Admin sets override to "pro" for a free user
+   - User gets pro access immediately
+   - Stripe plan_code unchanged (still "free")
+   - Admin clears override -> user returns to free
+
+4. **Suspension**
+   - Admin suspends a premium user
+   - Effective plan -> free immediately, regardless of Stripe status
+   - Admin unsuspends -> premium restored
+
+5. **Frontend cannot unlock**
+   - No client-side billing state grants access
+   - `/api/billing/subscription` returns effective plan from backend
+   - All plan checks go through `plan_guard.py` -> `get_effective_plan_code()`
+
+6. **allow_downgrade safety**
+   - `upsert_subscription()` defaults `allow_downgrade=False`
+   - Prevents accidental paid->free overwrites from stale events
+   - Only explicit cancel/delete events pass `allow_downgrade=True`
+
 ## Enforcement Architecture
 
 ```
@@ -97,7 +165,11 @@ Frontend UI check (disable buttons, show upgrade prompts)
     v  (can be bypassed by direct API call)
 Backend plan_guard.py
     |
-    +-- Read user subscription from DB
+    +-- get_effective_plan_code(user_id)
+    |     +-- Check suspended_at -> free
+    |     +-- Check admin_override_plan -> override
+    |     +-- Check status in (active, trialing) -> free if not
+    |     +-- Return plan_code or fallback free
     +-- Look up plan limits (config/plans.py)
     +-- Read global feature flags (platform_config table)
     +-- Return (allowed, error_message)

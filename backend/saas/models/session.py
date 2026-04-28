@@ -231,7 +231,7 @@ def set_session_running(session_id: str) -> None:
 
 def set_session_ended(session_id: str, status: str = "stopped") -> None:
     execute(
-        "UPDATE saas_game_sessions SET status = %s, ended_at = now() WHERE id = %s",
+        "UPDATE saas_game_sessions SET status = %s, ended_at = now(), ws_port = NULL WHERE id = %s",
         (status, session_id),
     )
 

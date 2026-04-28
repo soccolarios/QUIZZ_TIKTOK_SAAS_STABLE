@@ -185,6 +185,24 @@ def resolve_token(overlay_token: str, request_host: str = "") -> Optional[Overla
             raw_opts = {}
     overlay_template = (raw_opts.get("overlay_template") or "default").strip()
 
+    _TERMINAL_STATUSES = {"stopped", "failed", "orphaned", "expired"}
+
+    if session_status in _TERMINAL_STATUSES:
+        logger.info(
+            "[OverlayResolver] token=%s... session=%s is terminal (%s) — no WS",
+            overlay_token[:8], session_id[:8], session_status,
+        )
+        return OverlayInfo(
+            session_id=session_id,
+            overlay_token=overlay_token,
+            session_status=session_status,
+            ws_url=None,
+            ws_port=None,
+            is_active=False,
+            engine_state=None,
+            overlay_template=overlay_template,
+        )
+
     # Resolve music config from launch_options.
     music_track_slug = (raw_opts.get("music_track_slug") or "none").strip()
     try:

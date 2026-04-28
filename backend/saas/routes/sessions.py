@@ -214,7 +214,10 @@ def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id
     raw_play_mode = (data.get("play_mode") or "single").strip()
     play_mode = _PLAY_MODE_MAP.get(raw_play_mode, "single")
     tiktok_username = data.get("tiktok_username") or None
-    simulation_mode = bool(data.get("simulation_mode", True))
+    if tiktok_username:
+        simulation_mode = False
+    else:
+        simulation_mode = bool(data.get("simulation_mode", True))
 
     if raw_play_mode in _MULTI_QUIZ_MODES:
         project_quiz_rows = get_quizzes_by_project(project_id)

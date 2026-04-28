@@ -65,7 +65,7 @@ export function OverlayPreview({ overlayUrl, shortUrl, previewState = 'unprepare
             <iframe
               key={reloadKey}
               ref={iframeRef}
-              src={overlayUrl}
+              src={`${overlayUrl}${overlayUrl.includes('?') ? '&' : '?'}preview=1`}
               width={NATIVE_W}
               height={NATIVE_H}
               title="Overlay preview"

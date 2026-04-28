@@ -43,14 +43,25 @@ class QuizOverlay {
         this._saasConfigLoaded = false;
         this._saasWsUrl = null;
 
+        this._previewMode = new URLSearchParams(window.location.search).has('preview');
+        if (this._previewMode) {
+            console.log('[Overlay] Preview mode active - audio disabled');
+        }
+
         this.animBaseDelay = overlayCfg.winner_pill_animation_base_delay || 0.6;
         this.animStep = overlayCfg.winner_pill_animation_step || 0.08;
         this.lbAnimStep = overlayCfg.leaderboard_item_animation_step || 0.1;
 
         this.audio = new AudioManager();
+        if (this._previewMode) {
+            this.audio.setMasterMute(true);
+        }
         this.audio.preload();
 
         this.music = new MusicPlayer();
+        if (this._previewMode) {
+            this.music.setMasterMute(true);
+        }
         const musicBase = window.__SAAS_MODE
             ? '/overlay-assets'
             : (window.location.pathname.startsWith('/overlay') ? '/overlay' : '');
@@ -563,24 +574,29 @@ class QuizOverlay {
                 this._applySnapshot(data);
                 break;
             case 'music_command':
-                this.music.handleCommand(data.command, data);
+                if (!this._previewMode) this.music.handleCommand(data.command, data);
                 break;
             case 'music_ducking':
-                if (data.duck) this.music.duck();
-                else this.music.unduck();
+                if (!this._previewMode) {
+                    if (data.duck) this.music.duck();
+                    else this.music.unduck();
+                }
                 break;
             case 'music_config':
-                this.music.applyConfig(data);
-                if (data.enabled === false) {
-                    this.music.pause();
-                } else if (data.enabled === true && !this.music._isPlaying) {
-                    this.music.resume();
+                if (!this._previewMode) {
+                    this.music.applyConfig(data);
+                    if (data.enabled === false) {
+                        this.music.pause();
+                    } else if (data.enabled === true && !this.music._isPlaying) {
+                        this.music.resume();
+                    }
                 }
                 break;
         }
     }
 
     async _loadMusicConfig() {
+        if (this._previewMode) return;
         if (this._saasMode) {
             // In SaaS mode, music config comes from the overlay config endpoint
             // which is already fetched during WebSocket setup. We apply it here
@@ -617,6 +633,7 @@ class QuizOverlay {
     }
 
     onAudioPlay(data) {
+        if (this._previewMode) return;
         const files = data.files || [];
         const token = data.token || null;
         const sequenceId = data.sequence_id || null;
@@ -658,7 +675,7 @@ class QuizOverlay {
             this.currentScreen = screenName;
         }
 
-        if (playSound) {
+        if (playSound && !this._previewMode) {
             this.audio.play(playSound);
         }
     }
@@ -680,7 +697,7 @@ class QuizOverlay {
         this._gameStarted = true;
         this.elements.questionTotal.textContent = data.total_questions;
         this.sessionLeaderboard = [];
-        this.music.onGameStart();
+        if (!this._previewMode) this.music.onGameStart();
         this.showScreen(UIState.STARTING);
     }
 
@@ -734,7 +751,7 @@ class QuizOverlay {
         this.elements.timerProgress.classList.remove('warning', 'danger');
         if (remaining <= 5) {
             this.elements.timerProgress.classList.add('danger');
-            if (remaining === 5 && !this.audio.currentlyPlaying['_sequence']) {
+            if (remaining === 5 && !this._previewMode && !this.audio.currentlyPlaying['_sequence']) {
                 this.audio.play('countdown_warning');
                 this.log('AUDIO', 'Playing: countdown_warning');
             }
@@ -1048,7 +1065,7 @@ class QuizOverlay {
             }
         }
 
-        this.music.onGameEnd();
+        if (!this._previewMode) this.music.onGameEnd();
         this.showScreen(UIState.END, { playSound: 'leaderboard_show' });
     }
 

@@ -272,10 +272,38 @@ class GameRuntime:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=10)
 
+        self._stop_ws_server()
+
         self._engine = None
         self._start_time = None
         self._set_state(RuntimeState.STOPPED)
         return True
+
+    def _stop_ws_server(self):
+        ws = self._ws_server
+        ws_loop = self._ws_loop
+        ws_thread = self._ws_thread
+
+        if ws and ws_loop and not ws_loop.is_closed():
+            self._log("Stopping WS server...")
+            try:
+                future = asyncio.run_coroutine_threadsafe(ws.stop(), ws_loop)
+                future.result(timeout=5)
+            except Exception as e:
+                self._log(f"WS server stop error: {e}")
+            try:
+                ws_loop.call_soon_threadsafe(ws_loop.stop)
+            except RuntimeError:
+                pass
+            self._log("WS loop stopped")
+
+        if ws_thread and ws_thread.is_alive():
+            ws_thread.join(timeout=5)
+            self._log("WS thread joined")
+
+        self._ws_server = None
+        self._ws_loop = None
+        self._ws_thread = None
 
     def pause(self) -> bool:
         with self._lock:

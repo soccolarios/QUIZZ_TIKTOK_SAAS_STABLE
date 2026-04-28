@@ -22,36 +22,7 @@ import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/layout/DashboardLayout';
 import { ApiError } from '../api/client';
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const PRESETS: { id: string; label: string; emoji: string; theme: string; category: string }[] = [
-  { id: 'culture', label: 'Culture générale', emoji: '🌍', theme: 'Culture générale', category: 'culture_generale' },
-  { id: 'sport', label: 'Sport', emoji: '⚽', theme: 'Sport et compétitions sportives', category: 'sport' },
-  { id: 'cinema', label: 'Cinéma', emoji: '🎬', theme: 'Cinéma et films', category: 'cinema' },
-  { id: 'sciences', label: 'Sciences', emoji: '🔬', theme: 'Sciences et découvertes', category: 'sciences' },
-  { id: 'histoire', label: 'Histoire', emoji: '📜', theme: 'Histoire mondiale', category: 'histoire' },
-  { id: 'musique', label: 'Musique', emoji: '🎵', theme: 'Musique et artistes', category: 'musique' },
-  { id: 'geographie', label: 'Géographie', emoji: '🗺️', theme: 'Géographie mondiale', category: 'geographie' },
-  { id: 'tech', label: 'Technologie', emoji: '💻', theme: 'Technologie et informatique', category: 'technologie' },
-];
-
-const DIFFICULTIES = [
-  { value: 1 as const, label: 'Facile', desc: 'Questions accessibles à tous', color: 'text-emerald-600 bg-emerald-50 border-emerald-200 ring-emerald-300' },
-  { value: 2 as const, label: 'Moyen', desc: 'Niveau intermédiaire', color: 'text-amber-600 bg-amber-50 border-amber-200 ring-amber-300' },
-  { value: 3 as const, label: 'Difficile', desc: 'Pour les experts', color: 'text-rose-600 bg-rose-50 border-rose-200 ring-rose-300' },
-];
-
-const QUESTION_COUNTS = [5, 10, 15, 20];
-
-const STYLES = [
-  { id: 'standard', label: 'Standard', desc: 'Questions classiques' },
-  { id: 'anecdote', label: 'Anecdotes', desc: 'Faits surprenants' },
-  { id: 'chiffres', label: 'Chiffres', desc: 'Dates, stats, records' },
-  { id: 'personnalites', label: 'Personnalités', desc: 'Célébrités, œuvres' },
-];
+import { useAiDefaults } from '../context/PublicConfigContext';
 
 const ANSWER_COLORS: Record<string, string> = {
   A: 'bg-blue-500',
@@ -73,7 +44,7 @@ const DIFFICULTY_BADGE: Record<number, string> = {
   3: 'bg-rose-100 text-rose-700',
 };
 
-const DIFFICULTY_LABEL: Record<number, string> = { 1: 'Facile', 2: 'Moyen', 3: 'Difficile' };
+// DIFFICULTY_LABEL built at render time from config
 
 // ---------------------------------------------------------------------------
 // Question preview card
@@ -376,17 +347,32 @@ function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme
 // ---------------------------------------------------------------------------
 
 export function AIGeneratorPage() {
+  const aiCfg = useAiDefaults();
+  const PRESETS = aiCfg.categories.map((c) => ({ id: c.code, label: c.label, emoji: c.emoji, theme: c.theme, category: c.category }));
+  const DIFFICULTIES = aiCfg.difficultyLevels.map((d, i) => ({
+    value: d.value as 1 | 2 | 3,
+    label: d.label,
+    desc: d.description,
+    color: ['text-emerald-600 bg-emerald-50 border-emerald-200 ring-emerald-300',
+            'text-amber-600 bg-amber-50 border-amber-200 ring-amber-300',
+            'text-rose-600 bg-rose-50 border-rose-200 ring-rose-300'][i] ?? '',
+  }));
+  const QUESTION_COUNTS = aiCfg.questionCounts;
+  const STYLES = aiCfg.questionStyles;
+  const DIFFICULTY_LABEL: Record<number, string> = Object.fromEntries(
+    aiCfg.difficultyLevels.map((d) => [d.value, d.label]),
+  );
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
-  // form state
-  const [selectedPreset, setSelectedPreset] = useState<string>('culture');
+  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS[0]?.id ?? 'culture');
   const [customTheme, setCustomTheme] = useState('');
   const [useCustomTheme, setUseCustomTheme] = useState(false);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
-  const [questionCount, setQuestionCount] = useState(10);
-  const [language, setLanguage] = useState('fr');
-  const [style, setStyle] = useState('standard');
+  const [questionCount, setQuestionCount] = useState(QUESTION_COUNTS[1] ?? 10);
+  const [language, setLanguage] = useState(aiCfg.defaultLanguage);
+  const [style, setStyle] = useState(STYLES[0]?.id ?? 'standard');
 
   // generation state
   const [generating, setGenerating] = useState(false);

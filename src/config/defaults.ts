@@ -214,14 +214,14 @@ const defaults: PublicConfig = {
 
   ai: {
     categories: [
-      { code: 'culture', label: 'Culture g\u00e9n\u00e9rale' },
-      { code: 'sport', label: 'Sport' },
-      { code: 'cinema', label: 'Cin\u00e9ma' },
-      { code: 'sciences', label: 'Sciences' },
-      { code: 'histoire', label: 'Histoire' },
-      { code: 'musique', label: 'Musique' },
-      { code: 'geographie', label: 'G\u00e9ographie' },
-      { code: 'tech', label: 'Technologie' },
+      { code: 'culture', label: 'Culture g\u00e9n\u00e9rale', emoji: '\uD83C\uDF0D', theme: 'Culture g\u00e9n\u00e9rale', category: 'culture_generale' },
+      { code: 'sport', label: 'Sport', emoji: '\u26BD', theme: 'Sport et comp\u00e9titions sportives', category: 'sport' },
+      { code: 'cinema', label: 'Cin\u00e9ma', emoji: '\uD83C\uDFAC', theme: 'Cin\u00e9ma et films', category: 'cinema' },
+      { code: 'sciences', label: 'Sciences', emoji: '\uD83D\uDD2C', theme: 'Sciences et d\u00e9couvertes', category: 'sciences' },
+      { code: 'histoire', label: 'Histoire', emoji: '\uD83D\uDCDC', theme: 'Histoire mondiale', category: 'histoire' },
+      { code: 'musique', label: 'Musique', emoji: '\uD83C\uDFB5', theme: 'Musique et artistes', category: 'musique' },
+      { code: 'geographie', label: 'G\u00e9ographie', emoji: '\uD83D\uDDFA\uFE0F', theme: 'G\u00e9ographie mondiale', category: 'geographie' },
+      { code: 'tech', label: 'Technologie', emoji: '\uD83D\uDCBB', theme: 'Technologie et informatique', category: 'technologie' },
     ],
     difficultyLevels: [
       { value: 1, label: 'Facile', description: 'Questions accessibles \u00e0 tous' },
@@ -229,7 +229,12 @@ const defaults: PublicConfig = {
       { value: 3, label: 'Difficile', description: 'Pour les experts' },
     ],
     questionCounts: [5, 10, 15, 20],
-    questionStyles: ['Standard', 'Anecdotes', 'Chiffres', 'Personnalit\u00e9s'],
+    questionStyles: [
+      { id: 'standard', label: 'Standard', desc: 'Questions classiques' },
+      { id: 'anecdote', label: 'Anecdotes', desc: 'Faits surprenants' },
+      { id: 'chiffres', label: 'Chiffres', desc: 'Dates, stats, records' },
+      { id: 'personnalites', label: 'Personnalit\u00e9s', desc: 'C\u00e9l\u00e9brit\u00e9s, \u0153uvres' },
+    ],
     defaultLanguage: 'fr',
     defaultModel: 'gpt-4o-mini',
   },

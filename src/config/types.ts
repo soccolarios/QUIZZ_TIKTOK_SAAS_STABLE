@@ -61,6 +61,9 @@ export interface FaqEntry {
 export interface AiPresetCategory {
   code: string;
   label: string;
+  emoji: string;
+  theme: string;
+  category: string;
 }
 
 export interface AiDifficultyLevel {
@@ -69,11 +72,17 @@ export interface AiDifficultyLevel {
   description: string;
 }
 
+export interface AiQuestionStyle {
+  id: string;
+  label: string;
+  desc: string;
+}
+
 export interface AiDefaults {
   categories: AiPresetCategory[];
   difficultyLevels: AiDifficultyLevel[];
   questionCounts: number[];
-  questionStyles: string[];
+  questionStyles: AiQuestionStyle[];
   defaultLanguage: string;
   defaultModel: string;
 }

@@ -1,5 +1,6 @@
 import { FolderOpen, BookOpen, PlayCircle, LogOut, Zap, User, CreditCard, LayoutDashboard, Sparkles, Rocket } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useBrand, usePlans } from '../../context/PublicConfigContext';
 
 export type NavPage = 'overview' | 'projects' | 'quizzes' | 'ai-generator' | 'sessions' | 'launch' | 'billing' | 'account';
 
@@ -23,17 +24,13 @@ const planColors: Record<string, string> = {
   premium: 'bg-amber-500 text-white',
 };
 
-const planLabels: Record<string, string> = {
-  free: 'Free',
-  pro: 'Pro',
-  premium: 'Premium',
-};
-
 export function Sidebar({ current, onChange }: SidebarProps) {
   const { user, logout } = useAuth();
+  const brand = useBrand();
+  const { plans } = usePlans();
 
   const planCode = user?.plan_code || 'free';
-  const planLabel = planLabels[planCode] || planCode;
+  const planLabel = plans.find((p) => p.code === planCode)?.name ?? planCode;
 
   return (
     <aside className="w-56 bg-gray-900 flex flex-col min-h-screen">
@@ -42,7 +39,7 @@ export function Sidebar({ current, onChange }: SidebarProps) {
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-semibold text-white">TikTok Quiz</span>
+          <span className="text-sm font-semibold text-white">{brand.name}</span>
         </div>
       </div>
 

@@ -28,6 +28,7 @@ import { quizzesApi } from '../api/quizzes';
 import { sessionsApi, type StartSessionParams, type PlayMode, type OverlayTemplate } from '../api/sessions';
 import { billingApi, type PlanLimits } from '../api/billing';
 import { musicApi, type MusicTrack } from '../api/music';
+import { useSessionDefaults } from '../context/PublicConfigContext';
 import type { Project, Quiz, Session } from '../api/types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -170,20 +171,15 @@ function TimeInput({ label, icon, value, onChange, min, max, unit, hint, presets
 }
 
 // ---------------------------------------------------------------------------
-// Static data
+// Static icon map for play modes
 // ---------------------------------------------------------------------------
 
-const PLAY_MODES: { value: PlayMode; label: string; hint: string; icon: React.ReactNode }[] = [
-  { value: 'single',      label: 'Single quiz',      hint: 'Play the selected quiz once.',                   icon: <SkipForward className="w-3.5 h-3.5" /> },
-  { value: 'loop_single', label: 'Loop this quiz',   hint: 'Repeat the selected quiz continuously.',         icon: <Repeat1     className="w-3.5 h-3.5" /> },
-  { value: 'sequential',  label: 'All quizzes',      hint: 'Play all project quizzes in order, once.',       icon: <ListOrdered className="w-3.5 h-3.5" /> },
-  { value: 'loop_all',    label: 'Loop all quizzes', hint: 'Cycle through all project quizzes continuously.', icon: <Repeat      className="w-3.5 h-3.5" /> },
-];
-
-const OVERLAY_TEMPLATES: { value: OverlayTemplate; label: string; hint: string }[] = [
-  { value: 'default',  label: 'Default',  hint: 'Animated gradient with depth orbs.' },
-  { value: 'football', label: 'Football', hint: 'Stadium-themed sports design.' },
-];
+const PLAY_MODE_ICONS: Record<string, React.ReactNode> = {
+  single:      <SkipForward className="w-3.5 h-3.5" />,
+  loop_single: <Repeat1     className="w-3.5 h-3.5" />,
+  sequential:  <ListOrdered className="w-3.5 h-3.5" />,
+  loop_all:    <Repeat      className="w-3.5 h-3.5" />,
+};
 
 // ---------------------------------------------------------------------------
 // Page
@@ -214,6 +210,19 @@ export interface LaunchSessionPageProps {
 }
 
 export function LaunchSessionPage({ onLaunched, prefill }: LaunchSessionPageProps) {
+  const sessionCfg = useSessionDefaults();
+  const PLAY_MODES = sessionCfg.playModes.map((m) => ({
+    value: m.value as PlayMode,
+    label: m.label,
+    hint: m.hint,
+    icon: PLAY_MODE_ICONS[m.value] ?? <SkipForward className="w-3.5 h-3.5" />,
+  }));
+  const OVERLAY_TEMPLATES = sessionCfg.overlayTemplates.map((t) => ({
+    value: t.value as OverlayTemplate,
+    label: t.label,
+    hint: t.hint,
+  }));
+
   // Data
   const [projects,     setProjects]     = useState<Project[]>([]);
   const [quizzes,      setQuizzes]      = useState<Quiz[]>([]);
@@ -222,7 +231,7 @@ export function LaunchSessionPage({ onLaunched, prefill }: LaunchSessionPageProp
   const [loadingData,  setLoadingData]  = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(false);
 
-  // Form state — initialise from prefill when provided
+  // Form state
   const [projectId,       setProjectId]       = useState(prefill?.projectId      ?? '');
   const [quizId,          setQuizId]          = useState(prefill?.quizId         ?? '');
   const [playMode,        setPlayMode]        = useState<PlayMode>(prefill?.playMode ?? 'single');
@@ -233,8 +242,8 @@ export function LaunchSessionPage({ onLaunched, prefill }: LaunchSessionPageProp
   const [usernameError,   setUsernameError]   = useState('');
   const [x2Enabled,       setX2Enabled]       = useState(prefill?.x2Enabled       ?? false);
   const [ttsEnabled,      setTtsEnabled]      = useState(prefill?.ttsEnabled      ?? false);
-  const [questionTime,    setQuestionTime]    = useState(String(prefill?.questionTime  ?? 30));
-  const [countdownTime,   setCountdownTime]   = useState(String(prefill?.countdownTime ?? 5));
+  const [questionTime,    setQuestionTime]    = useState(String(prefill?.questionTime  ?? sessionCfg.questionTimerDefault));
+  const [countdownTime,   setCountdownTime]   = useState(String(prefill?.countdownTime ?? sessionCfg.countdownDefault));
 
   // Prepared session
   const [preparedSession, setPreparedSession] = useState<Session | null>(null);

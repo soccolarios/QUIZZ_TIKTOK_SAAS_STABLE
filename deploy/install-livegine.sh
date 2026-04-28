@@ -355,9 +355,21 @@ SQL
 ok "Privileges granted"
 
 # URL-encode password to safely handle special characters (@, :, /, etc.)
-DB_PASS_ENCODED="$(printf '%s' "${DB_PASS}" | python3 -c "import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read(), safe=''))")"
+# Uses stdin pipe to avoid shell-interpretation of special chars in the password.
+DB_PASS_ENCODED="$(printf '%s' "${DB_PASS}" | python3 -c "import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read(), safe=''), end='')")"
 DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENCODED}@127.0.0.1:5432/${DB_NAME}"
-info "DATABASE_URL: postgresql://${DB_USER}:****@127.0.0.1:5432/${DB_NAME}"
+
+# Validate the generated URL is well-formed (host must be 127.0.0.1, not mangled)
+DB_URL_HOST="$(printf '%s' "${DATABASE_URL}" | python3 -c "
+import sys
+from urllib.parse import urlparse
+u = urlparse(sys.stdin.read())
+print(u.hostname or '', end='')
+")"
+if [ "${DB_URL_HOST}" != "127.0.0.1" ]; then
+    fail "DATABASE_URL is malformed: parsed host='${DB_URL_HOST}', expected '127.0.0.1'. Password may contain unencoded special characters."
+fi
+ok "DATABASE_URL validated (host=${DB_URL_HOST}, user=${DB_USER}, db=${DB_NAME})"
 
 # =============================================================================
 #  SECTION 7 — Environment file
@@ -595,8 +607,8 @@ NGINX_PREFIX="livegine"
 ALL_DOMAINS=("${LANDING_DOMAIN}" "www.${LANDING_DOMAIN}" "${APP_DOMAIN}" "${ADMIN_DOMAIN}")
 [ -n "${API_DOMAIN}" ] && ALL_DOMAINS+=("${API_DOMAIN}")
 
-# Track which domains successfully got certs
-declare -A CERT_OK=()
+# Track which domains successfully got certs (space-delimited string, bash 3+ safe)
+CERT_OK_LIST=""
 
 # Helper: write an HTTP-only bootstrap nginx config (no ssl directives)
 write_http_bootstrap() {
@@ -736,6 +748,23 @@ write_http_bootstrap "${NGINX_PREFIX}-admin"   "${ADMIN_DOMAIN}"                
 # Remove default site if present
 [ -f "/etc/nginx/sites-enabled/default" ] && rm -f "/etc/nginx/sites-enabled/default"
 
+# ── Mandatory validation: zero SSL directives in bootstrap configs ────────────
+info "[SSL Bootstrap] Validating bootstrap configs contain NO SSL directives..."
+BOOTSTRAP_SSL_HITS=0
+for conf_file in /etc/nginx/sites-available/${NGINX_PREFIX}-*; do
+    [ -f "$conf_file" ] || continue
+    if grep -qE 'ssl_certificate|ssl_certificate_key|listen\s+443\s+ssl' "$conf_file"; then
+        BOOTSTRAP_SSL_HITS=$((BOOTSTRAP_SSL_HITS + 1))
+        echo -e "  ${RED}FOUND SSL directives in: ${conf_file}${NC}"
+        grep -n -E 'ssl_certificate|ssl_certificate_key|listen\s+443\s+ssl' "$conf_file"
+    else
+        ok "[Bootstrap Config Verified: NO SSL directives] ${conf_file}"
+    fi
+done
+if [ "$BOOTSTRAP_SSL_HITS" -gt 0 ]; then
+    fail "Bootstrap configs contain SSL directives. This is a bug — HTTP-only configs must have zero SSL references."
+fi
+
 info "[SSL Bootstrap] Testing HTTP-only Nginx configuration..."
 nginx -t || fail "Nginx HTTP bootstrap config test failed."
 ok "[SSL Bootstrap] Nginx config valid (HTTP-only, all vhosts)"
@@ -792,7 +821,7 @@ obtain_cert() {
         if [ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ] && \
            [ -f "/etc/letsencrypt/live/${domain}/privkey.pem" ]; then
             ok "[Certbot] ${domain} — certificate obtained and verified"
-            CERT_OK["${domain}"]=1
+            CERT_OK_LIST="${CERT_OK_LIST} ${domain}"
             SSL_RESULTS+=("${label}: OK")
         else
             warn "[Certbot] ${domain} — certbot succeeded but cert files not found!"
@@ -821,9 +850,15 @@ gen_ssl_vhost() {
     shift 3
     local conf="/etc/nginx/sites-available/${output_name}"
 
-    # Check if cert exists for this domain
-    if [ -z "${CERT_OK[${cert_domain}]+_}" ]; then
+    # Check if cert exists for this domain (string match in CERT_OK_LIST)
+    if [[ " ${CERT_OK_LIST} " != *" ${cert_domain} "* ]]; then
         info "[SSL Finalize] ${cert_domain}: no cert — keeping HTTP-only config"
+        return
+    fi
+    # Double-check cert files on disk
+    if [ ! -f "/etc/letsencrypt/live/${cert_domain}/fullchain.pem" ] || \
+       [ ! -f "/etc/letsencrypt/live/${cert_domain}/privkey.pem" ]; then
+        warn "[SSL Finalize] ${cert_domain}: cert marked OK but files missing on disk — keeping HTTP-only"
         return
     fi
 

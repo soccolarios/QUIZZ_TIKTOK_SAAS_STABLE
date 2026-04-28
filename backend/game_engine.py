@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import time
 from datetime import datetime
 from typing import Dict, List, Optional
 from collections import defaultdict
@@ -147,16 +148,18 @@ class GameEngine:
 
     async def _wait_for_overlay(self):
         timeout = 30
-        elapsed = 0
-        while self.ws_server.get_client_count() == 0 and elapsed < timeout:
-            if elapsed == 0:
-                print("[Game] Waiting for overlay to connect via WebSocket...")
-            await asyncio.sleep(0.5)
-            elapsed += 0.5
+        t0 = time.monotonic()
+        if self.ws_server.get_client_count() == 0:
+            print("[Game] Waiting for overlay to connect via WebSocket...")
+            while self.ws_server.get_client_count() == 0:
+                if time.monotonic() - t0 >= timeout:
+                    break
+                await asyncio.sleep(0.05)
+        elapsed = time.monotonic() - t0
         if self.ws_server.get_client_count() > 0:
-            print(f"[Game] Overlay connected ({self.ws_server.get_client_count()} client(s))")
+            print(f"[Startup] Overlay connected in {elapsed:.2f}s ({self.ws_server.get_client_count()} client(s))")
         else:
-            print(f"[Game] No overlay connected after {timeout}s, proceeding anyway")
+            print(f"[Startup] No overlay connected after {timeout}s, proceeding anyway")
 
     def _build_questionnaire_queue(self):
         mode = self.config.get_play_mode()
@@ -184,6 +187,8 @@ class GameEngine:
     async def start_game(self, num_questions: int = None):
         if num_questions:
             self.config.total_questions = num_questions
+
+        self._startup_t0 = time.monotonic()
 
         self._build_questionnaire_queue()
 
@@ -441,6 +446,11 @@ class GameEngine:
         guard = await self._enter_phase("show_question")
         if guard is None:
             return
+
+        if self.current_question_index == 0 and hasattr(self, '_startup_t0'):
+            elapsed = time.monotonic() - self._startup_t0
+            print(f"[Startup] First question in {elapsed:.2f}s")
+
         question = self.current_questions[self.current_question_index]
         self.tts.set_question_index(self.current_question_index)
 

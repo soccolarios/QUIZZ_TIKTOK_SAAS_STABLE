@@ -36,6 +36,16 @@ server {
     root {{LANDING_ROOT}};
     index index.html;
 
+    # Public config API — proxy to backend so landing JS can fetch config
+    location /api/config/ {
+        proxy_pass         http://{{GUNICORN_BIND}};
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 10s;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
         expires 1h;

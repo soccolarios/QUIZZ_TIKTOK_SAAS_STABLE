@@ -837,7 +837,8 @@ gen_ssl_vhost() {
 # Landing (cert domain = LANDING_DOMAIN, also covers www)
 gen_ssl_vhost "nginx-landing.conf.template" "${NGINX_PREFIX}-landing" "${LANDING_DOMAIN}" \
     "LANDING_DOMAIN=${LANDING_DOMAIN}" \
-    "LANDING_ROOT=${LANDING_ROOT}"
+    "LANDING_ROOT=${LANDING_ROOT}" \
+    "GUNICORN_BIND=${GUNICORN_BIND}"
 
 # App
 gen_ssl_vhost "nginx-app.conf.template" "${NGINX_PREFIX}-app" "${APP_DOMAIN}" \

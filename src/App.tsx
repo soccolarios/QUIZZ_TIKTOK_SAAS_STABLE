@@ -17,9 +17,12 @@ import { BillingPage } from './pages/BillingPage';
 import { AccountPage } from './pages/AccountPage';
 import { DashboardLayout, toast } from './components/layout/DashboardLayout';
 import { PageSpinner } from './components/ui/Spinner';
+import { AdminApp } from './admin/AdminApp';
 import type { NavPage } from './components/layout/Sidebar';
 import type { Session } from './api/types';
 import { isActiveStatus } from './utils/sessionStatus';
+
+const isAdminPath = window.location.pathname.startsWith('/admin');
 
 type AuthView = 'landing' | 'login' | 'register';
 
@@ -143,6 +146,8 @@ function Dashboard() {
 
 function AppInner() {
   const { user, loading } = useAuth();
+
+  if (isAdminPath) return <AdminApp />;
 
   if (loading) return <PageSpinner />;
   if (!user) return <AuthGate />;

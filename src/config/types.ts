@@ -78,13 +78,25 @@ export interface AiQuestionStyle {
   desc: string;
 }
 
+export interface AiLanguage {
+  code: string;
+  label: string;
+}
+
 export interface AiDefaults {
   categories: AiPresetCategory[];
   difficultyLevels: AiDifficultyLevel[];
   questionCounts: number[];
   questionStyles: AiQuestionStyle[];
+  supportedLanguages: AiLanguage[];
   defaultLanguage: string;
   defaultModel: string;
+  defaultPreset: string;
+  defaultQuestionCount: number;
+  defaultDifficulty: number;
+  defaultStyle: string;
+  defaultAudience: string;
+  quizTitlePrefix: string;
 }
 
 export interface OverlayTemplate {

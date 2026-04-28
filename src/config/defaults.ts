@@ -235,8 +235,22 @@ const defaults: PublicConfig = {
       { id: 'chiffres', label: 'Chiffres', desc: 'Dates, stats, records' },
       { id: 'personnalites', label: 'Personnalit\u00e9s', desc: 'C\u00e9l\u00e9brit\u00e9s, \u0153uvres' },
     ],
+    supportedLanguages: [
+      { code: 'fr', label: 'Fran\u00e7ais' },
+      { code: 'en', label: 'English' },
+      { code: 'es', label: 'Espa\u00f1ol' },
+      { code: 'de', label: 'Deutsch' },
+      { code: 'it', label: 'Italiano' },
+      { code: 'pt', label: 'Portugu\u00eas' },
+    ],
     defaultLanguage: 'fr',
     defaultModel: 'gpt-4o-mini',
+    defaultPreset: 'culture',
+    defaultQuestionCount: 10,
+    defaultDifficulty: 2,
+    defaultStyle: 'standard',
+    defaultAudience: 'general',
+    quizTitlePrefix: 'Quiz IA',
   },
 
   session: {

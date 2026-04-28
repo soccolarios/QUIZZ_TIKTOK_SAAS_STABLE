@@ -44,8 +44,6 @@ const DIFFICULTY_BADGE: Record<number, string> = {
   3: 'bg-rose-100 text-rose-700',
 };
 
-// DIFFICULTY_LABEL built at render time from config
-
 // ---------------------------------------------------------------------------
 // Question preview card
 // ---------------------------------------------------------------------------
@@ -55,9 +53,10 @@ interface QuestionCardProps {
   index: number;
   selected: boolean;
   onToggle: () => void;
+  difficultyLabels: Record<number, string>;
 }
 
-function QuestionCard({ question, index, selected, onToggle }: QuestionCardProps) {
+function QuestionCard({ question, index, selected, onToggle, difficultyLabels }: QuestionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const correct = question.correct_answer;
 
@@ -137,7 +136,7 @@ function QuestionCard({ question, index, selected, onToggle }: QuestionCardProps
         {/* difficulty badge + expand */}
         <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${DIFFICULTY_BADGE[question.difficulty] || DIFFICULTY_BADGE[2]}`}>
-            {DIFFICULTY_LABEL[question.difficulty] || 'Moyen'}
+            {difficultyLabels[question.difficulty] || difficultyLabels[2] || 'Medium'}
           </span>
           <button
             onClick={() => setExpanded((v) => !v)}
@@ -162,11 +161,12 @@ interface SaveModalProps {
   onClose: () => void;
   onSaved: (quiz: Quiz) => void;
   suggestedTheme: string;
+  quizTitlePrefix: string;
 }
 
 type SaveMode = 'new' | 'existing';
 
-function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme }: SaveModalProps) {
+function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme, quizTitlePrefix }: SaveModalProps) {
   const [mode, setMode] = useState<SaveMode>('new');
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -180,7 +180,7 @@ function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme
   useEffect(() => {
     if (open) {
       setMode('new');
-      setNewTitle(`Quiz IA — ${suggestedTheme}`);
+      setNewTitle(`${quizTitlePrefix} — ${suggestedTheme}`);
       setNewDesc('');
       setNewProjectId(projects[0]?.id || '');
       setExistingQuizId('');
@@ -359,20 +359,20 @@ export function AIGeneratorPage() {
   }));
   const QUESTION_COUNTS = aiCfg.questionCounts;
   const STYLES = aiCfg.questionStyles;
-  const DIFFICULTY_LABEL: Record<number, string> = Object.fromEntries(
+  const difficultyLabels: Record<number, string> = Object.fromEntries(
     aiCfg.difficultyLevels.map((d) => [d.value, d.label]),
   );
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
-  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS[0]?.id ?? 'culture');
+  const [selectedPreset, setSelectedPreset] = useState<string>(aiCfg.defaultPreset);
   const [customTheme, setCustomTheme] = useState('');
   const [useCustomTheme, setUseCustomTheme] = useState(false);
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
-  const [questionCount, setQuestionCount] = useState(QUESTION_COUNTS[1] ?? 10);
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(aiCfg.defaultDifficulty as 1 | 2 | 3);
+  const [questionCount, setQuestionCount] = useState(aiCfg.defaultQuestionCount);
   const [language, setLanguage] = useState(aiCfg.defaultLanguage);
-  const [style, setStyle] = useState(STYLES[0]?.id ?? 'standard');
+  const [style, setStyle] = useState(aiCfg.defaultStyle);
 
   // generation state
   const [generating, setGenerating] = useState(false);
@@ -390,7 +390,7 @@ export function AIGeneratorPage() {
 
   const activePreset = PRESETS.find((p) => p.id === selectedPreset);
   const effectiveTheme = useCustomTheme ? customTheme.trim() : (activePreset?.theme || '');
-  const effectiveCategory = useCustomTheme ? customTheme.trim() : (activePreset?.category || 'general');
+  const effectiveCategory = useCustomTheme ? customTheme.trim() : (activePreset?.category || aiCfg.defaultAudience);
 
   const canGenerate = effectiveTheme.length > 0 && !generating;
 
@@ -407,7 +407,7 @@ export function AIGeneratorPage() {
       difficulty,
       question_count: questionCount,
       language,
-      audience: 'general',
+      audience: aiCfg.defaultAudience,
       style,
     };
 
@@ -580,12 +580,9 @@ export function AIGeneratorPage() {
                   onChange={(e) => setLanguage(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                  <option value="de">Deutsch</option>
-                  <option value="it">Italiano</option>
-                  <option value="pt">Português</option>
+                  {aiCfg.supportedLanguages.map((lang) => (
+                    <option key={lang.code} value={lang.code}>{lang.label}</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
@@ -730,6 +727,7 @@ export function AIGeneratorPage() {
                     index={i}
                     selected={selectedIds.has(q.id)}
                     onToggle={() => toggleQuestion(q.id)}
+                    difficultyLabels={difficultyLabels}
                   />
                 ))}
               </div>
@@ -745,6 +743,7 @@ export function AIGeneratorPage() {
         onClose={() => setSaveOpen(false)}
         onSaved={() => {}}
         suggestedTheme={lastTheme}
+        quizTitlePrefix={aiCfg.quizTitlePrefix}
       />
     </div>
   );

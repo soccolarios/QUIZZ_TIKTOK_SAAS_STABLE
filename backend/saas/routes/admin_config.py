@@ -5,10 +5,10 @@ GET  /api/admin/config/<key>   -- read a config namespace
 PUT  /api/admin/config/<key>   -- upsert a config namespace
 POST /api/admin/config/test-email -- send a test email
 
-Keys: site_config, plans, feature_flags, mailjet
+Keys: site_config, plans, feature_flags, mailjet, api_keys, sound_bank
 
 Security:
-  - Mailjet secrets are masked on read (write-only)
+  - Secrets are masked on read (write-only) for mailjet and api_keys
   - PUT preserves existing secrets when masked placeholder values are sent
   - Test email is rate-limited
 """
@@ -23,7 +23,7 @@ from backend.saas.utils.responses import success, error
 logger = logging.getLogger(__name__)
 bp = Blueprint("admin_config", __name__, url_prefix="/api/admin/config")
 
-ALLOWED_KEYS = {"site_config", "plans", "feature_flags", "mailjet"}
+ALLOWED_KEYS = {"site_config", "plans", "feature_flags", "mailjet", "api_keys", "sound_bank"}
 
 _MASK_PLACEHOLDER = "********"
 
@@ -57,6 +57,40 @@ def _mask_mailjet_config(cfg: dict | None) -> dict | None:
     return masked
 
 
+_API_KEY_SECRET_FIELDS = {
+    "openai_api_key", "elevenlabs_api_key", "azure_tts_key", "tiktok_api_key",
+}
+
+
+def _mask_api_keys_config(cfg: dict | None) -> dict | None:
+    """Return a copy of the api_keys config with all secret values masked."""
+    if not cfg:
+        return cfg
+    masked = dict(cfg)
+    for field in _API_KEY_SECRET_FIELDS:
+        if masked.get(field):
+            masked[field] = _mask_secret(masked[field])
+    masked["_secrets_masked"] = True
+    return masked
+
+
+def _merge_secrets(new_config: dict, existing_config: dict | None, secret_fields: set[str]) -> dict:
+    """
+    Generic secret merge: preserve existing secrets when masked/unchanged values are submitted.
+    """
+    if not existing_config:
+        return new_config
+    merged = dict(new_config)
+    merged.pop("_secrets_masked", None)
+    for field in secret_fields:
+        submitted = merged.get(field, "")
+        if _is_masked_value(submitted) or submitted == "":
+            existing_val = existing_config.get(field)
+            if existing_val:
+                merged[field] = existing_val
+    return merged
+
+
 def _is_masked_value(value: str | None) -> bool:
     """Check if a value is a masked placeholder (should not be persisted)."""
     if not value:
@@ -65,27 +99,7 @@ def _is_masked_value(value: str | None) -> bool:
 
 
 def _merge_mailjet_secrets(new_config: dict, existing_config: dict | None) -> dict:
-    """
-    Preserve existing secrets when the admin submits masked/unchanged values.
-
-    If the admin sends a value containing the mask placeholder, we keep the
-    existing stored value. This makes secrets write-only: you can set a new
-    one, but reading always returns masked.
-    """
-    if not existing_config:
-        return new_config
-
-    merged = dict(new_config)
-    merged.pop("_secrets_masked", None)
-
-    for secret_field in ("api_key", "secret_key"):
-        submitted = merged.get(secret_field, "")
-        if _is_masked_value(submitted) or submitted == "":
-            existing_val = existing_config.get(secret_field)
-            if existing_val:
-                merged[secret_field] = existing_val
-
-    return merged
+    return _merge_secrets(new_config, existing_config, {"api_key", "secret_key"})
 
 
 @bp.get("/<key>")
@@ -109,6 +123,8 @@ def get_config(key: str):
 
     if key == "mailjet":
         value = _mask_mailjet_config(value)
+    elif key == "api_keys":
+        value = _mask_api_keys_config(value)
 
     return success({
         "key": key,
@@ -133,12 +149,16 @@ def put_config(key: str):
 
     value = body["value"]
 
-    if key == "mailjet" and isinstance(value, dict):
+    if key in ("mailjet", "api_keys") and isinstance(value, dict):
         existing_row = fetch_one(
-            "SELECT value FROM platform_config WHERE key = 'mailjet'",
+            "SELECT value FROM platform_config WHERE key = %s",
+            (key,),
         )
         existing_config = existing_row["value"] if existing_row else None
-        value = _merge_mailjet_secrets(value, existing_config)
+        if key == "mailjet":
+            value = _merge_mailjet_secrets(value, existing_config)
+        else:
+            value = _merge_secrets(value, existing_config, _API_KEY_SECRET_FIELDS)
 
     from flask import g
     user_id = g.current_user_id

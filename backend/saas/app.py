@@ -15,6 +15,7 @@ from backend.saas.routes.music import bp as music_bp
 from backend.saas.routes.public_config import bp as public_config_bp
 from backend.saas.routes.admin_config import bp as admin_config_bp
 from backend.saas.routes.admin_billing import bp as admin_billing_bp
+from backend.saas.routes.admin_music import bp as admin_music_bp
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ def create_app() -> Flask:
     app.register_blueprint(public_config_bp)
     app.register_blueprint(admin_config_bp)
     app.register_blueprint(admin_billing_bp)
+    app.register_blueprint(admin_music_bp)
 
     @app.get("/api/health")
     def health():

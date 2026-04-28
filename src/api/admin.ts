@@ -1,6 +1,6 @@
 import { api } from './client';
 
-export type AdminConfigKey = 'site_config' | 'plans' | 'feature_flags' | 'mailjet';
+export type AdminConfigKey = 'site_config' | 'plans' | 'feature_flags' | 'mailjet' | 'api_keys' | 'sound_bank';
 
 interface ConfigResponse<T> {
   key: string;
@@ -121,3 +121,54 @@ export const adminEmailApi = {
   sendTestEmail: (email: string) =>
     api.post<{ sent: boolean; message: string }>('/api/admin/config/test-email', { email }),
 };
+
+// ---------------------------------------------------------------------------
+// Admin API Keys
+// ---------------------------------------------------------------------------
+
+export interface ApiKeysConfig {
+  openai_api_key: string;
+  elevenlabs_api_key: string;
+  azure_tts_key: string;
+  tiktok_api_key: string;
+}
+
+// ---------------------------------------------------------------------------
+// Admin Music Bank
+// ---------------------------------------------------------------------------
+
+export interface AdminMusicTrack {
+  id: string;
+  slug: string;
+  name: string;
+  genre: string;
+  duration_sec: number | null;
+  file_name: string | null;
+  active: boolean;
+  sort_order: number;
+  required_plan_code: string | null;
+  created_at: string | null;
+}
+
+export const adminMusicApi = {
+  list: () =>
+    api.get<AdminMusicTrack[]>('/api/admin/music/'),
+
+  create: (data: Partial<AdminMusicTrack>) =>
+    api.post<AdminMusicTrack>('/api/admin/music/', data),
+
+  update: (id: string, data: Partial<AdminMusicTrack>) =>
+    api.put<AdminMusicTrack>(`/api/admin/music/${id}`, data),
+
+  toggleActive: (id: string, active: boolean) =>
+    api.patch<AdminMusicTrack>(`/api/admin/music/${id}/active`, { active }),
+};
+
+// ---------------------------------------------------------------------------
+// Admin Sound Bank (config-based placeholder)
+// ---------------------------------------------------------------------------
+
+export interface SoundBankConfig {
+  enabled: boolean;
+  sounds: Record<string, { file_name: string; label: string; enabled: boolean }>;
+}

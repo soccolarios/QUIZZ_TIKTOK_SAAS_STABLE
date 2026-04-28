@@ -8,6 +8,9 @@ import { PricingPlansPage } from './PricingPlansPage';
 import { FeatureFlagsPage } from './FeatureFlagsPage';
 import { AdminBillingPage } from './AdminBillingPage';
 import { MailjetConfigPage } from './MailjetConfigPage';
+import { ApiKeysPage } from './ApiKeysPage';
+import { MusicBankPage } from './MusicBankPage';
+import { SoundBankPage } from './SoundBankPage';
 import type { AdminPage } from './AdminSidebar';
 import { ShieldAlert, LogIn } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -110,6 +113,9 @@ function AdminDashboard() {
     if (page === 'feature-flags') return <FeatureFlagsPage />;
     if (page === 'subscriptions') return <AdminBillingPage />;
     if (page === 'mailjet') return <MailjetConfigPage />;
+    if (page === 'api-keys') return <ApiKeysPage />;
+    if (page === 'music-bank') return <MusicBankPage />;
+    if (page === 'sound-bank') return <SoundBankPage />;
     return <AdminPlaceholderPage moduleId={page} />;
   };
 

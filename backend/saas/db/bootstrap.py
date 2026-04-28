@@ -300,15 +300,16 @@ CREATE INDEX IF NOT EXISTS idx_saas_billing_events_stripe_event_id
 -- saas_music_tracks  (admin-managed background music catalog)
 -- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS saas_music_tracks (
-  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug         text        UNIQUE NOT NULL,
-  name         text        NOT NULL,
-  genre        text        NOT NULL DEFAULT 'General',
-  duration_sec integer,
-  file_name    text,
-  active       boolean     NOT NULL DEFAULT true,
-  sort_order   integer     NOT NULL DEFAULT 0,
-  created_at   timestamptz NOT NULL DEFAULT now()
+  id                 uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug               text        UNIQUE NOT NULL,
+  name               text        NOT NULL,
+  genre              text        NOT NULL DEFAULT 'General',
+  duration_sec       integer,
+  file_name          text,
+  active             boolean     NOT NULL DEFAULT true,
+  sort_order         integer     NOT NULL DEFAULT 0,
+  required_plan_code text,
+  created_at         timestamptz NOT NULL DEFAULT now()
 );
 
 -- Idempotent: add file_name column for existing deployments upgrading from older schema.
@@ -319,6 +320,12 @@ BEGIN
     WHERE table_name = 'saas_music_tracks' AND column_name = 'file_name'
   ) THEN
     ALTER TABLE saas_music_tracks ADD COLUMN file_name text;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'saas_music_tracks' AND column_name = 'required_plan_code'
+  ) THEN
+    ALTER TABLE saas_music_tracks ADD COLUMN required_plan_code text;
   END IF;
 END $$;
 

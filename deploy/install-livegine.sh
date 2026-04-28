@@ -186,7 +186,6 @@ VENV="${APP_DIR}/venv"
 GUNICORN_BIND="127.0.0.1:5001"
 HEALTH_URL="http://${GUNICORN_BIND}/api/health"
 LANDING_ROOT="${APP_DIR}/landing"
-ADMIN_ROOT="${APP_DIR}/admin-static"
 
 # =============================================================================
 #  SECTION 1 — DNS validation
@@ -473,41 +472,9 @@ else
     ok "Landing page already exists (preserved)"
 fi
 
-# Admin panel placeholder
-mkdir -p "${ADMIN_ROOT}"
-if [ ! -f "${ADMIN_ROOT}/index.html" ]; then
-    cat > "${ADMIN_ROOT}/index.html" <<'ADMIN_HTML'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LiveGine Admin</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-       background:#111;color:#ccc;min-height:100vh;display:flex;
-       align-items:center;justify-content:center;text-align:center}
-  .wrap{max-width:420px;padding:2rem}
-  h1{font-size:2rem;font-weight:700;margin-bottom:.5rem;color:#e0e0e0}
-  p{font-size:1rem;line-height:1.6;color:#888}
-  .badge{display:inline-block;margin-top:1rem;padding:.4rem 1rem;
-         border:1px solid #444;border-radius:4px;font-size:.85rem;color:#666}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>LiveGine Admin</h1>
-  <p>The admin panel is not yet deployed on this domain.</p>
-  <span class="badge">Coming soon</span>
-</div>
-</body>
-</html>
-ADMIN_HTML
-    ok "Admin placeholder created: ${ADMIN_ROOT}/index.html"
-else
-    ok "Admin page already exists (preserved)"
-fi
+# Admin panel — served from the same SPA build (dist/).
+# The frontend JS detects admin.* hostname and renders the Super Admin shell.
+ok "Admin panel: served from ${APP_DIR}/dist/ (hostname-detected SPA)"
 
 # =============================================================================
 #  SECTION 10 — Gunicorn configuration
@@ -741,7 +708,7 @@ HTTPCONF
 # Generate HTTP-only bootstrap configs
 write_http_bootstrap "${NGINX_PREFIX}-landing" "${LANDING_DOMAIN} www.${LANDING_DOMAIN}" "${LANDING_ROOT}"
 write_http_bootstrap "${NGINX_PREFIX}-app"     "${APP_DOMAIN}"                           "PROXY"
-write_http_bootstrap "${NGINX_PREFIX}-admin"   "${ADMIN_DOMAIN}"                         "${ADMIN_ROOT}"
+write_http_bootstrap "${NGINX_PREFIX}-admin"   "${ADMIN_DOMAIN}"                         "${APP_DIR}/dist"
 [ -n "${API_DOMAIN}" ] && \
     write_http_bootstrap "${NGINX_PREFIX}-api" "${API_DOMAIN}"                           "STUB_503"
 
@@ -890,7 +857,7 @@ gen_ssl_vhost "nginx-app.conf.template" "${NGINX_PREFIX}-app" "${APP_DOMAIN}" \
 # Admin
 gen_ssl_vhost "nginx-admin.conf.template" "${NGINX_PREFIX}-admin" "${ADMIN_DOMAIN}" \
     "ADMIN_DOMAIN=${ADMIN_DOMAIN}" \
-    "ADMIN_ROOT=${ADMIN_ROOT}"
+    "APP_DIR=${APP_DIR}"
 
 # API (optional)
 if [ -n "${API_DOMAIN}" ]; then
@@ -984,7 +951,7 @@ done
 echo ""
 echo -e "  ${BOLD}Static roots:${NC}"
 echo "    Landing : ${LANDING_ROOT}"
-echo "    Admin   : ${ADMIN_ROOT}"
+echo "    Admin   : ${APP_DIR}/dist (same SPA, hostname-detected)"
 echo ""
 echo -e "  ${BOLD}Useful commands:${NC}"
 echo "  ─────────────────────────────────────────────────────────────"
@@ -1001,7 +968,6 @@ echo "    /etc/nginx/sites-available/${NGINX_PREFIX}-admin"
 echo ""
 echo -e "  ${YELLOW}Next steps:${NC}"
 echo "  1. Replace landing placeholder with your actual landing page"
-echo "  2. Replace admin placeholder with the admin panel build"
-echo "  3. Add Stripe keys to ${ENV_FILE}"
-echo "  4. Restart: sudo systemctl restart ${SERVICE_NAME}"
+echo "  2. Add Stripe keys to ${ENV_FILE}"
+echo "  3. Restart: sudo systemctl restart ${SERVICE_NAME}"
 echo ""

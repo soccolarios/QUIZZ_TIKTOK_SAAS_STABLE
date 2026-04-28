@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PublicConfigProvider } from './context/PublicConfigContext';
 import { UserConfigProvider } from './context/UserConfigContext';
-import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -26,18 +25,11 @@ const isAdminMode =
   window.location.hostname.startsWith('admin.') ||
   window.location.pathname.startsWith('/admin');
 
-type AuthView = 'landing' | 'login' | 'register';
+type AuthView = 'login' | 'register';
 
-function AuthGate({ defaultView }: { defaultView?: AuthView }) {
-  const [view, setView] = useState<AuthView>(defaultView ?? 'landing');
+function AuthGate() {
+  const [view, setView] = useState<AuthView>('login');
 
-  if (view === 'login') {
-    return (
-      <LoginPage
-        onSwitchToRegister={() => setView('register')}
-      />
-    );
-  }
   if (view === 'register') {
     return (
       <RegisterPage
@@ -46,9 +38,8 @@ function AuthGate({ defaultView }: { defaultView?: AuthView }) {
     );
   }
   return (
-    <LandingPage
-      onGetStarted={() => setView('register')}
-      onLogin={() => setView('login')}
+    <LoginPage
+      onSwitchToRegister={() => setView('register')}
     />
   );
 }

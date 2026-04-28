@@ -252,12 +252,15 @@ export function LaunchSessionPage({ onLaunched, prefill }: LaunchSessionPageProp
 
   // Load projects + plan limits + music on mount
   useEffect(() => {
-    Promise.all([projectsApi.list(), billingApi.getSubscription(), musicApi.list()])
+    Promise.all([
+      projectsApi.list(),
+      billingApi.getSubscription(),
+      musicApi.list().catch(() => [] as MusicTrack[]),
+    ])
       .then(([projs, sub, tracks]) => {
         setProjects(projs);
         setLimits(sub.limits);
         setMusicTracks(tracks);
-        // Only default to first project when no prefill provided
         if (projs.length > 0 && !prefill?.projectId) setProjectId(projs[0].id);
         if (!sub.limits.tts_enabled) setTtsEnabled(false);
         if (!sub.limits.x2_enabled)  setX2Enabled(false);

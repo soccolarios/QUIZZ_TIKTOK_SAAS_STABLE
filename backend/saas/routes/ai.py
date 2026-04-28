@@ -17,6 +17,7 @@ import uuid
 from flask import Blueprint, request, g
 
 from backend.saas.auth.middleware import require_auth
+from backend.saas.services.plan_guard import check_can_use_ai
 from backend.saas.utils.responses import success, error
 
 logger = logging.getLogger(__name__)
@@ -146,6 +147,10 @@ def _validate_and_normalise(raw: list, default_difficulty: int, default_category
 @bp.post("/generate")
 @require_auth
 def generate():
+    allowed, guard_msg = check_can_use_ai(g.current_user_id)
+    if not allowed:
+        return error(guard_msg, 403)
+
     body = request.get_json(silent=True) or {}
 
     theme = (body.get("theme") or "").strip()

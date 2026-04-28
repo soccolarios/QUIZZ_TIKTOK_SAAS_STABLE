@@ -274,7 +274,11 @@ export function StartSessionModal({ open, onClose, onStarted, prefill }: StartSe
       if (prefill.musicTrackSlug)  setMusicTrackSlug(prefill.musicTrackSlug);
     }
     setLoadingData(true);
-    Promise.all([projectsApi.list(), billingApi.getSubscription(), musicApi.list()])
+    Promise.all([
+      projectsApi.list(),
+      billingApi.getSubscription(),
+      musicApi.list().catch(() => [] as MusicTrack[]),
+    ])
       .then(([projs, sub, tracks]) => {
         setProjects(projs);
         setLimits(sub.limits);

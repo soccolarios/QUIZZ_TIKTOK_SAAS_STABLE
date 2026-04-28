@@ -97,7 +97,11 @@ from backend.saas.services.session_manager import session_manager
 from backend.saas.services.session_logger import get_logs
 from backend.saas.services.session_store import get_snapshot
 from backend.saas.services.scores_reader import read_scores, db_exists
-from backend.saas.services.plan_guard import check_can_start_session
+from backend.saas.services.plan_guard import (
+    check_can_start_session,
+    check_can_use_tts,
+    check_can_use_music,
+)
 from backend.saas.utils.responses import success, error, serialize_row, serialize_rows
 
 logger = logging.getLogger(__name__)
@@ -206,10 +210,11 @@ _PLAY_MODE_MAP = {
 _MULTI_QUIZ_MODES = {"sequential", "loop_all"}
 
 
-def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id: str) -> tuple[dict, str, bool, list]:
+def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id: str, user_id: str | None = None) -> tuple[dict, str, bool, list]:
     """
     Parse and validate launch-time parameters from the request body.
     Returns (launch_options, tiktok_username, simulation_mode, all_quiz_ids).
+    Silently downgrades TTS/music if the user's plan doesn't allow them.
     """
     raw_play_mode = (data.get("play_mode") or "single").strip()
     play_mode = _PLAY_MODE_MAP.get(raw_play_mode, "single")
@@ -227,6 +232,19 @@ def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id
     else:
         all_quiz_ids = [quiz_id]
 
+    no_tts = bool(data.get("no_tts", True))
+    music_track_slug = (data.get("music_track_slug") or "none").strip()
+
+    if user_id:
+        if not no_tts:
+            tts_ok, _ = check_can_use_tts(user_id)
+            if not tts_ok:
+                no_tts = True
+        if music_track_slug != "none":
+            music_ok, _ = check_can_use_music(user_id)
+            if not music_ok:
+                music_track_slug = "none"
+
     launch_options = {
         "tiktok_username": tiktok_username,
         "simulation_mode": simulation_mode,
@@ -236,9 +254,9 @@ def _resolve_launch_options(data: dict, quiz_id: str, quiz_row: dict, project_id
         "countdown_time": data.get("countdown_time"),
         "total_questions": data.get("total_questions", 0),
         "x2_enabled": bool(data.get("x2_enabled", False)),
-        "no_tts": bool(data.get("no_tts", True)),
+        "no_tts": no_tts,
         "overlay_template": (data.get("overlay_template") or "default").strip(),
-        "music_track_slug": (data.get("music_track_slug") or "none").strip(),
+        "music_track_slug": music_track_slug,
     }
     return launch_options, tiktok_username, simulation_mode, all_quiz_ids
 
@@ -352,7 +370,7 @@ def start_session():
             return error(guard_msg, 403)
 
         launch_options, tiktok_username, simulation_mode, _ = _resolve_launch_options(
-            data, quiz_id, quiz_row, project_id
+            data, quiz_id, quiz_row, project_id, user_id=g.current_user_id
         )
 
         update_session_launch_options(
@@ -404,7 +422,7 @@ def start_session():
         return error(guard_msg, 403)
 
     launch_options, tiktok_username, simulation_mode, _ = _resolve_launch_options(
-        data, quiz_id, quiz_row, project_id
+        data, quiz_id, quiz_row, project_id, user_id=g.current_user_id
     )
 
     reuse_token = (data.get("overlay_token") or "").strip() or None
@@ -825,6 +843,10 @@ def set_session_tts(session_id):
     data = request.get_json(silent=True) or {}
     if "enabled" not in data:
         return error("enabled field required")
+    if bool(data["enabled"]):
+        allowed, guard_msg = check_can_use_tts(g.current_user_id)
+        if not allowed:
+            return error(guard_msg, 403)
     runtime = session_manager._get_runtime(session_id)
     if not runtime:
         return error("Session not active", 404)
@@ -847,6 +869,10 @@ def set_session_music(session_id):
     data = request.get_json(silent=True) or {}
     if "enabled" not in data:
         return error("enabled field required")
+    if bool(data["enabled"]):
+        allowed, guard_msg = check_can_use_music(g.current_user_id)
+        if not allowed:
+            return error(guard_msg, 403)
     runtime = session_manager._get_runtime(session_id)
     if not runtime:
         return error("Session not active", 404)

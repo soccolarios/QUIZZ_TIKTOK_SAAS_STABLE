@@ -1,6 +1,7 @@
-import { FolderOpen, BookOpen, PlayCircle, LogOut, Zap, User, CreditCard, LayoutDashboard, Sparkles, Rocket } from 'lucide-react';
+import { FolderOpen, BookOpen, PlayCircle, LogOut, Zap, User, CreditCard, LayoutDashboard, Sparkles, Rocket, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useBrand, usePlans } from '../../context/PublicConfigContext';
+import { usePlanFlags } from '../../context/UserConfigContext';
 
 export type NavPage = 'overview' | 'projects' | 'quizzes' | 'ai-generator' | 'sessions' | 'launch' | 'billing' | 'account';
 
@@ -28,6 +29,7 @@ export function Sidebar({ current, onChange }: SidebarProps) {
   const { user, logout } = useAuth();
   const brand = useBrand();
   const { plans } = usePlans();
+  const flags = usePlanFlags();
 
   const planCode = user?.plan_code || 'free';
   const planLabel = plans.find((p) => p.code === planCode)?.name ?? planCode;
@@ -63,9 +65,13 @@ export function Sidebar({ current, onChange }: SidebarProps) {
               {item.icon}
               {item.label}
               {item.highlight && !isActive && (
-                <span className="ml-auto text-[9px] font-bold bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-                  IA
-                </span>
+                flags.aiEnabled ? (
+                  <span className="ml-auto text-[9px] font-bold bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                    IA
+                  </span>
+                ) : (
+                  <Lock className="ml-auto w-3 h-3 text-gray-500" />
+                )
               )}
             </button>
           );

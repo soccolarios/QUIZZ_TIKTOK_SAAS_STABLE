@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader2,
   Plus,
+  Lock,
 } from 'lucide-react';
 import { aiApi } from '../api/ai';
 import { quizzesApi } from '../api/quizzes';
@@ -23,6 +24,7 @@ import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/layout/DashboardLayout';
 import { ApiError } from '../api/client';
 import { useAiDefaults } from '../context/PublicConfigContext';
+import { usePlanFlags } from '../context/UserConfigContext';
 
 const ANSWER_COLORS: Record<string, string> = {
   A: 'bg-blue-500',
@@ -347,6 +349,7 @@ function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme
 // ---------------------------------------------------------------------------
 
 export function AIGeneratorPage() {
+  const flags = usePlanFlags();
   const aiCfg = useAiDefaults();
   const PRESETS = aiCfg.categories.map((c) => ({ id: c.code, label: c.label, emoji: c.emoji, theme: c.theme, category: c.category }));
   const DIFFICULTIES = aiCfg.difficultyLevels.map((d, i) => ({
@@ -436,6 +439,25 @@ export function AIGeneratorPage() {
   const deselectAll = () => setSelectedIds(new Set());
 
   const selectedQuestions = (generatedQuestions ?? []).filter((q) => selectedIds.has(q.id));
+
+  if (!flags.aiEnabled) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-5">
+          <Lock className="w-8 h-8 text-gray-400" />
+        </div>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">AI Generator</h2>
+        <p className="text-sm text-gray-500 max-w-sm mb-6">
+          AI quiz generation is available on Pro and Premium plans.
+          Upgrade to create quizzes with a single click.
+        </p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-semibold rounded-lg opacity-80">
+          <Sparkles className="w-4 h-4" />
+          Upgrade to unlock
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">

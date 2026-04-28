@@ -352,6 +352,43 @@ DROP TRIGGER IF EXISTS trg_platform_config_updated_at ON platform_config;
 CREATE TRIGGER trg_platform_config_updated_at
   BEFORE UPDATE ON platform_config
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- -------------------------------------------------------
+-- password_reset_tokens
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid        NOT NULL REFERENCES saas_users(id) ON DELETE CASCADE,
+  token_hash  text        UNIQUE NOT NULL,
+  expires_at  timestamptz NOT NULL,
+  consumed_at timestamptz,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id
+  ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at
+  ON password_reset_tokens(expires_at);
+
+-- -------------------------------------------------------
+-- email_log
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS email_log (
+  id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             uuid        REFERENCES saas_users(id) ON DELETE SET NULL,
+  recipient_email     text        NOT NULL,
+  template_key        text        NOT NULL,
+  subject             text        NOT NULL DEFAULT '',
+  provider            text        NOT NULL DEFAULT 'mailjet',
+  provider_message_id text,
+  status              text        NOT NULL DEFAULT 'sent',
+  error_message       text,
+  created_at          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_log_user_id ON email_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_log_template_key ON email_log(template_key);
+CREATE INDEX IF NOT EXISTS idx_email_log_created_at ON email_log(created_at);
 """
 
 

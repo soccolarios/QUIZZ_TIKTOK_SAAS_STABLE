@@ -4,6 +4,8 @@ import { PublicConfigProvider } from './context/PublicConfigContext';
 import { UserConfigProvider } from './context/UserConfigContext';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { QuizzesPage } from './pages/QuizzesPage';
@@ -25,21 +27,35 @@ const isAdminMode =
   window.location.hostname.startsWith('admin.') ||
   window.location.pathname.startsWith('/admin');
 
-type AuthView = 'login' | 'register';
+type AuthView = 'login' | 'register' | 'forgot-password' | 'reset-password';
 
 function AuthGate() {
-  const [view, setView] = useState<AuthView>('login');
+  const params = new URLSearchParams(window.location.search);
+  const resetToken = params.get('token');
+  const isResetPath = window.location.pathname === '/reset-password';
 
+  const [view, setView] = useState<AuthView>(
+    isResetPath && resetToken ? 'reset-password' : 'login'
+  );
+
+  const handleResetDone = () => {
+    window.history.replaceState({}, '', '/');
+    setView('login');
+  };
+
+  if (view === 'reset-password' && resetToken) {
+    return <ResetPasswordPage token={resetToken} onDone={handleResetDone} />;
+  }
+  if (view === 'forgot-password') {
+    return <ForgotPasswordPage onBack={() => setView('login')} />;
+  }
   if (view === 'register') {
-    return (
-      <RegisterPage
-        onSwitchToLogin={() => setView('login')}
-      />
-    );
+    return <RegisterPage onSwitchToLogin={() => setView('login')} />;
   }
   return (
     <LoginPage
       onSwitchToRegister={() => setView('register')}
+      onForgotPassword={() => setView('forgot-password')}
     />
   );
 }

@@ -20,6 +20,12 @@ from backend.saas.models.subscription import (
     set_suspended,
     log_billing_event,
 )
+from backend.saas.services.email_service import send_email
+from backend.saas.services.email_templates import (
+    render_account_suspended,
+    render_account_unsuspended,
+    render_plan_override,
+)
 from backend.saas.utils.responses import success, error, serialize_row, serialize_rows
 
 logger = logging.getLogger(__name__)
@@ -123,6 +129,18 @@ def admin_set_override(user_id: str):
     except Exception:
         logger.warning("Failed to log admin override event", exc_info=True)
 
+    try:
+        email = result.get("email") or ""
+        if email:
+            subj, html, text = render_plan_override(email, plan_code, reason)
+            send_email(
+                to_email=email, to_name=email, subject=subj,
+                html_body=html, text_body=text,
+                template_key="plan_override", user_id=user_id,
+            )
+    except Exception:
+        logger.warning("Failed to send override notification email", exc_info=True)
+
     return success(_sub_response(result))
 
 
@@ -174,5 +192,22 @@ def admin_set_suspended(user_id: str):
         )
     except Exception:
         logger.warning("Failed to log admin suspension event", exc_info=True)
+
+    try:
+        email = result.get("email") or ""
+        if email:
+            if suspended:
+                subj, html, text = render_account_suspended(email, reason)
+                tpl_key = "account_suspended"
+            else:
+                subj, html, text = render_account_unsuspended(email)
+                tpl_key = "account_unsuspended"
+            send_email(
+                to_email=email, to_name=email, subject=subj,
+                html_body=html, text_body=text,
+                template_key=tpl_key, user_id=user_id,
+            )
+    except Exception:
+        logger.warning("Failed to send suspension notification email", exc_info=True)
 
     return success(_sub_response(result))

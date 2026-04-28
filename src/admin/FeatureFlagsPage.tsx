@@ -20,6 +20,7 @@ const BUILTIN_FLAGS: FlagMeta[] = [
   { key: 'analyticsEnabled', label: 'Session Analytics', description: 'Detailed stats and charts for session history', builtin: true },
   { key: 'customBrandingEnabled', label: 'Custom Branding', description: 'Allow Pro/Premium users to customize overlay branding', builtin: true },
   { key: 'musicEnabled', label: 'Background Music', description: 'Enable background music selection during session launch', builtin: true },
+  { key: 'emailEnabled', label: 'Transactional Emails', description: 'Send emails for auth, billing, and admin events via Mailjet', builtin: true },
 ];
 
 const INITIAL: FeatureFlagsConfig = {
@@ -29,6 +30,7 @@ const INITIAL: FeatureFlagsConfig = {
   analyticsEnabled: true,
   customBrandingEnabled: false,
   musicEnabled: true,
+  emailEnabled: true,
 };
 
 export function FeatureFlagsPage() {

@@ -8,9 +8,10 @@ import { ApiError } from '../api/client';
 
 interface LoginPageProps {
   onSwitchToRegister: () => void;
+  onForgotPassword: () => void;
 }
 
-export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
+export function LoginPage({ onSwitchToRegister, onForgotPassword }: LoginPageProps) {
   const { login } = useAuth();
   const brand = useBrand();
   const [email, setEmail] = useState('');
@@ -53,15 +54,26 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
               autoComplete="email"
               required
             />
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+              />
+              <div className="text-right mt-1.5">
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            </div>
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}

@@ -9,10 +9,8 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
-  X,
   AlertCircle,
   Check,
-  Loader2,
   RefreshCw,
 } from 'lucide-react';
 import { adminBillingApi, type AdminSubscription } from '../api/admin';

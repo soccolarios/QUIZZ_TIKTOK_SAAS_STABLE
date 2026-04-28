@@ -1,6 +1,6 @@
 import { api } from './client';
 
-export type AdminConfigKey = 'site_config' | 'plans' | 'feature_flags';
+export type AdminConfigKey = 'site_config' | 'plans' | 'feature_flags' | 'mailjet';
 
 interface ConfigResponse<T> {
   key: string;
@@ -56,6 +56,7 @@ export interface FeatureFlagsConfig {
   analyticsEnabled: boolean;
   customBrandingEnabled: boolean;
   musicEnabled: boolean;
+  emailEnabled: boolean;
   [key: string]: boolean;
 }
 
@@ -103,4 +104,20 @@ export const adminBillingApi = {
       suspended,
       reason,
     }),
+};
+
+// ---------------------------------------------------------------------------
+// Admin Email / Mailjet
+// ---------------------------------------------------------------------------
+
+export interface MailjetConfig {
+  api_key: string;
+  secret_key: string;
+  sender_email: string;
+  sender_name: string;
+}
+
+export const adminEmailApi = {
+  sendTestEmail: (email: string) =>
+    api.post<{ sent: boolean; message: string }>('/api/admin/config/test-email', { email }),
 };

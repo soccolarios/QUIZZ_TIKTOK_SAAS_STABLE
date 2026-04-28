@@ -4,7 +4,7 @@ Admin config routes — Super Admin only.
 GET  /api/admin/config/<key>   — read a config namespace
 PUT  /api/admin/config/<key>   — upsert a config namespace
 
-Keys: site_config, plans, feature_flags
+Keys: site_config, plans, feature_flags, mailjet
 """
 
 import json
@@ -23,7 +23,7 @@ def _require_admin():
     return None
 
 
-ALLOWED_KEYS = {"site_config", "plans", "feature_flags"}
+ALLOWED_KEYS = {"site_config", "plans", "feature_flags", "mailjet"}
 
 
 @bp.get("/<key>")
@@ -82,3 +82,31 @@ def put_config(key: str):
     )
 
     return success({"key": key, "saved": True})
+
+
+@bp.post("/test-email")
+@require_auth
+def test_email():
+    """Send a test email to verify Mailjet configuration."""
+    denied = _require_admin()
+    if denied:
+        return denied
+
+    body = req.get_json(silent=True) or {}
+    to_email = (body.get("email") or "").strip()
+    if not to_email:
+        return error("email is required")
+
+    from backend.saas.services.email_templates import render_test_email
+    from backend.saas.services.email_service import send_email
+
+    subject, html, text = render_test_email(to_email)
+    sent = send_email(
+        to_email=to_email, to_name=to_email, subject=subject,
+        html_body=html, text_body=text,
+        template_key="test_email",
+    )
+
+    if sent:
+        return success({"sent": True, "message": f"Test email sent to {to_email}"})
+    return error("Failed to send test email. Check Mailjet configuration.", 502)

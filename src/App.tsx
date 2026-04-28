@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PublicConfigProvider } from './context/PublicConfigContext';
+import { UserConfigProvider } from './context/UserConfigContext';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -144,13 +146,19 @@ function AppInner() {
 
   if (loading) return <PageSpinner />;
   if (!user) return <AuthGate />;
-  return <Dashboard />;
+  return (
+    <UserConfigProvider>
+      <Dashboard />
+    </UserConfigProvider>
+  );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
+    <PublicConfigProvider>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </PublicConfigProvider>
   );
 }

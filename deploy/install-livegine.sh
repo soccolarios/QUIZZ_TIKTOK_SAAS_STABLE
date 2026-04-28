@@ -827,7 +827,8 @@ gen_ssl_vhost "nginx-app.conf.template" "${NGINX_PREFIX}-app" "${APP_DOMAIN}" \
 # Admin
 gen_ssl_vhost "nginx-admin.conf.template" "${NGINX_PREFIX}-admin" "${ADMIN_DOMAIN}" \
     "ADMIN_DOMAIN=${ADMIN_DOMAIN}" \
-    "APP_DIR=${APP_DIR}"
+    "APP_DIR=${APP_DIR}" \
+    "GUNICORN_BIND=${GUNICORN_BIND}"
 
 # API (optional)
 if [ -n "${API_DOMAIN}" ]; then

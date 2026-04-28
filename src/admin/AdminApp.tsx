@@ -10,6 +10,7 @@ import type { AdminPage } from './AdminSidebar';
 import { ShieldAlert, LogIn } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { ApiError } from '../api/client';
 import { useBrand } from '../context/PublicConfigContext';
 import { PageSpinner } from '../components/ui/Spinner';
 
@@ -27,8 +28,8 @@ function AdminLoginGate() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch {
-      setError('Invalid credentials or insufficient permissions.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to reach the server. Check your connection.');
     } finally {
       setLoading(false);
     }

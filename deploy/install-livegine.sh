@@ -191,7 +191,7 @@ ADMIN_ROOT="${APP_DIR}/admin-static"
 # =============================================================================
 #  SECTION 1 — DNS validation
 # =============================================================================
-section "1 / 15 — DNS validation"
+section "1 / 17 — DNS validation"
 
 check_dns() {
     local domain="$1" label="$2"
@@ -237,7 +237,7 @@ fi
 # =============================================================================
 #  SECTION 2 — System packages
 # =============================================================================
-section "2 / 15 — System packages"
+section "2 / 17 — System packages"
 
 info "Running apt-get update..."
 apt-get update -qq
@@ -259,7 +259,7 @@ ok "System packages installed"
 # =============================================================================
 #  SECTION 3 — Node.js LTS
 # =============================================================================
-section "3 / 15 — Node.js LTS"
+section "3 / 17 — Node.js LTS"
 
 if command -v node &>/dev/null && node --version | grep -qE '^v(18|20|22)\.'; then
     ok "Node.js $(node --version) already present"
@@ -276,7 +276,7 @@ ok "Node.js $(node -v) | npm $(npm -v)"
 # =============================================================================
 #  SECTION 4 — Clone or update the repository
 # =============================================================================
-section "4 / 15 — Project files"
+section "4 / 17 — Project files"
 
 GIT_REMOTE=""
 [ -d "${PROJECT_SRC}/.git" ] && GIT_REMOTE="$(git -C "${PROJECT_SRC}" remote get-url origin 2>/dev/null || true)"
@@ -306,7 +306,7 @@ fi
 # =============================================================================
 #  SECTION 5 — Python virtual environment
 # =============================================================================
-section "5 / 15 — Python environment"
+section "5 / 17 — Python environment"
 
 [ ! -d "${VENV}" ] && python3 -m venv "${VENV}"
 "${VENV}/bin/pip" install --upgrade pip -q
@@ -316,7 +316,7 @@ ok "Python dependencies installed"
 # =============================================================================
 #  SECTION 6 — PostgreSQL setup
 # =============================================================================
-section "6 / 15 — PostgreSQL"
+section "6 / 17 — PostgreSQL"
 
 systemctl enable postgresql --quiet
 systemctl start postgresql
@@ -354,12 +354,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 SQL
 ok "Privileges granted"
 
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@127.0.0.1:5432/${DB_NAME}"
+# URL-encode password to safely handle special characters (@, :, /, etc.)
+DB_PASS_ENCODED="$(printf '%s' "${DB_PASS}" | python3 -c "import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read(), safe=''))")"
+DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENCODED}@127.0.0.1:5432/${DB_NAME}"
+info "DATABASE_URL: postgresql://${DB_USER}:****@127.0.0.1:5432/${DB_NAME}"
 
 # =============================================================================
 #  SECTION 7 — Environment file
 # =============================================================================
-section "7 / 15 — Environment file"
+section "7 / 17 — Environment file"
 
 mkdir -p "${ENV_DIR}"
 chown root:www-data "${ENV_DIR}"
@@ -400,7 +403,7 @@ ok "Environment file: ${ENV_FILE}"
 # =============================================================================
 #  SECTION 8 — Frontend build
 # =============================================================================
-section "8 / 15 — Frontend build"
+section "8 / 17 — Frontend build"
 
 cd "${APP_DIR}"
 npm ci --silent 2>/dev/null || npm install --silent
@@ -416,7 +419,7 @@ ok "Frontend built -> ${APP_DIR}/dist/"
 # =============================================================================
 #  SECTION 9 — Static root placeholders
 # =============================================================================
-section "9 / 15 — Static placeholders"
+section "9 / 17 — Static placeholders"
 
 # Landing page placeholder
 mkdir -p "${LANDING_ROOT}"
@@ -497,7 +500,7 @@ fi
 # =============================================================================
 #  SECTION 10 — Gunicorn configuration
 # =============================================================================
-section "10 / 15 — Gunicorn"
+section "10 / 17 — Gunicorn"
 
 mkdir -p "${LOG_DIR}"
 touch "${LOG_DIR}/saas-access.log" "${LOG_DIR}/saas-error.log"
@@ -526,7 +529,7 @@ ok "Gunicorn config written"
 # =============================================================================
 #  SECTION 11 — Database bootstrap
 # =============================================================================
-section "11 / 15 — Database schema"
+section "11 / 17 — Database schema"
 
 set +e
 "${VENV}/bin/python3" -c "
@@ -545,7 +548,7 @@ set -e
 # =============================================================================
 #  SECTION 12 — systemd service
 # =============================================================================
-section "12 / 15 — systemd service"
+section "12 / 17 — systemd service"
 
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 rollback_register_file "${SERVICE_FILE}"
@@ -582,76 +585,173 @@ systemctl enable "${SERVICE_NAME}" --quiet
 ok "Service: ${SERVICE_FILE}"
 
 # =============================================================================
-#  SECTION 13 — Nginx multi-vhost configuration
+#  SECTION 13 — Nginx Stage A: HTTP-only bootstrap
 # =============================================================================
-section "13 / 15 — Nginx (multi-vhost)"
+section "13 / 17 — Nginx Stage A: HTTP-only bootstrap"
 
 NGINX_PREFIX="livegine"
 
-# Helper: generate a vhost from a template
-gen_vhost() {
-    local template="$1" output_name="$2"
-    shift 2
+# Collect all domains for iteration
+ALL_DOMAINS=("${LANDING_DOMAIN}" "www.${LANDING_DOMAIN}" "${APP_DOMAIN}" "${ADMIN_DOMAIN}")
+[ -n "${API_DOMAIN}" ] && ALL_DOMAINS+=("${API_DOMAIN}")
+
+# Track which domains successfully got certs
+declare -A CERT_OK=()
+
+# Helper: write an HTTP-only bootstrap nginx config (no ssl directives)
+write_http_bootstrap() {
+    local output_name="$1" server_names="$2" root_or_proxy="$3"
     local conf="/etc/nginx/sites-available/${output_name}"
     local link="/etc/nginx/sites-enabled/${output_name}"
 
-    cp "${APP_DIR}/deploy/${template}" "${conf}"
-
-    # Apply all placeholder replacements passed as KEY=VALUE pairs
-    while [ $# -gt 0 ]; do
-        local placeholder="${1%%=*}"
-        local value="${1#*=}"
-        sed -i "s|{{${placeholder}}}|${value}|g" "${conf}"
-        shift
-    done
-
-    ln -sf "${conf}" "${link}"
     rollback_register_file "${conf}"
     rollback_register_symlink "${link}"
-    ok "${output_name} -> ${conf}"
+
+    if [ "${root_or_proxy}" = "PROXY" ]; then
+        cat > "${conf}" <<HTTPCONF
+# [SSL Bootstrap] HTTP-only temporary config for ${server_names}
+server {
+    listen 80;
+    server_name ${server_names};
+
+    client_max_body_size 10M;
+
+    location ~ ^/saas-ws/(91[0-9][0-9])\$ {
+        set \$ws_port \$1;
+        proxy_pass          http://127.0.0.1:\$ws_port;
+        proxy_http_version  1.1;
+        proxy_set_header    Upgrade    \$http_upgrade;
+        proxy_set_header    Connection "Upgrade";
+        proxy_set_header    Host       \$host;
+        proxy_set_header    X-Real-IP  \$remote_addr;
+        proxy_read_timeout  3600s;
+        proxy_send_timeout  3600s;
+        proxy_buffering     off;
+    }
+
+    location ^~ /overlay-assets/audio/ {
+        alias      ${APP_DIR}/data/audio/;
+        access_log off;
+    }
+
+    location ^~ /overlay-assets/music/ {
+        alias      ${APP_DIR}/data/music/;
+        access_log off;
+    }
+
+    location ^~ /overlay-assets/ {
+        proxy_pass         http://${GUNICORN_BIND};
+        proxy_set_header   Host              \$host;
+        proxy_set_header   X-Real-IP         \$remote_addr;
+        proxy_set_header   X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /overlay {
+        proxy_pass         http://${GUNICORN_BIND};
+        proxy_set_header   Host              \$host;
+        proxy_set_header   X-Real-IP         \$remote_addr;
+        proxy_set_header   X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /o/ {
+        proxy_pass         http://${GUNICORN_BIND};
+        proxy_set_header   Host              \$host;
+        proxy_set_header   X-Real-IP         \$remote_addr;
+        proxy_set_header   X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /s/ {
+        proxy_pass         http://${GUNICORN_BIND};
+        proxy_set_header   Host              \$host;
+        proxy_set_header   X-Real-IP         \$remote_addr;
+        proxy_set_header   X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto \$scheme;
+    }
+
+    location /api/ {
+        proxy_pass         http://${GUNICORN_BIND};
+        proxy_set_header   Host              \$host;
+        proxy_set_header   X-Real-IP         \$remote_addr;
+        proxy_set_header   X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 60s;
+    }
+
+    location / {
+        root       ${APP_DIR}/dist;
+        try_files  \$uri \$uri/ /index.html;
+    }
+}
+HTTPCONF
+    elif [ "${root_or_proxy}" = "STUB_503" ]; then
+        cat > "${conf}" <<HTTPCONF
+# [SSL Bootstrap] HTTP-only temporary config for ${server_names}
+server {
+    listen 80;
+    server_name ${server_names};
+
+    location /health {
+        default_type application/json;
+        return 200 '{"status":"stub"}';
+    }
+
+    location / {
+        default_type application/json;
+        return 503 '{"error":"service_unavailable","message":"API not yet deployed."}';
+    }
+}
+HTTPCONF
+    else
+        # Static root
+        cat > "${conf}" <<HTTPCONF
+# [SSL Bootstrap] HTTP-only temporary config for ${server_names}
+server {
+    listen 80;
+    server_name ${server_names};
+
+    root ${root_or_proxy};
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+HTTPCONF
+    fi
+
+    ln -sf "${conf}" "${link}"
+    info "[SSL Bootstrap] HTTP-only: ${output_name} (${server_names})"
 }
 
-# --- Landing ---
-gen_vhost "nginx-landing.conf.template" "${NGINX_PREFIX}-landing" \
-    "LANDING_DOMAIN=${LANDING_DOMAIN}" \
-    "LANDING_ROOT=${LANDING_ROOT}"
-
-# --- App (full SaaS) ---
-gen_vhost "nginx-app.conf.template" "${NGINX_PREFIX}-app" \
-    "APP_DOMAIN=${APP_DOMAIN}" \
-    "APP_DIR=${APP_DIR}" \
-    "GUNICORN_BIND=${GUNICORN_BIND}"
-
-# --- Admin ---
-gen_vhost "nginx-admin.conf.template" "${NGINX_PREFIX}-admin" \
-    "ADMIN_DOMAIN=${ADMIN_DOMAIN}" \
-    "ADMIN_ROOT=${ADMIN_ROOT}"
-
-# --- API (optional) ---
-if [ -n "${API_DOMAIN}" ]; then
-    gen_vhost "nginx-api.conf.template" "${NGINX_PREFIX}-api" \
-        "API_DOMAIN=${API_DOMAIN}"
-fi
+# Generate HTTP-only bootstrap configs
+write_http_bootstrap "${NGINX_PREFIX}-landing" "${LANDING_DOMAIN} www.${LANDING_DOMAIN}" "${LANDING_ROOT}"
+write_http_bootstrap "${NGINX_PREFIX}-app"     "${APP_DOMAIN}"                           "PROXY"
+write_http_bootstrap "${NGINX_PREFIX}-admin"   "${ADMIN_DOMAIN}"                         "${ADMIN_ROOT}"
+[ -n "${API_DOMAIN}" ] && \
+    write_http_bootstrap "${NGINX_PREFIX}-api" "${API_DOMAIN}"                           "STUB_503"
 
 # Remove default site if present
 [ -f "/etc/nginx/sites-enabled/default" ] && rm -f "/etc/nginx/sites-enabled/default"
 
-info "Testing Nginx configuration..."
-nginx -t || fail "Nginx config test failed. Check output above."
-ok "Nginx config valid (all vhosts)"
+info "[SSL Bootstrap] Testing HTTP-only Nginx configuration..."
+nginx -t || fail "Nginx HTTP bootstrap config test failed."
+ok "[SSL Bootstrap] Nginx config valid (HTTP-only, all vhosts)"
+
+info "[SSL Bootstrap] Reloading Nginx..."
+systemctl reload nginx
+ok "[SSL Bootstrap] Nginx serving HTTP on all domains"
 
 # =============================================================================
-#  SECTION 14 — Permissions and start
+#  SECTION 14 — Permissions and service start
 # =============================================================================
-section "14 / 15 — Permissions and service start"
+section "14 / 17 — Permissions and service start"
 
 chown -R www-data:www-data "${APP_DIR}" "${LOG_DIR}"
 chmod -R o-rwx "${APP_DIR}"
 ok "Permissions set"
-
-info "Reloading Nginx..."
-systemctl reload nginx
-ok "Nginx reloaded"
 
 info "Starting ${SERVICE_NAME}..."
 systemctl restart "${SERVICE_NAME}"
@@ -665,15 +765,15 @@ else
 fi
 
 # =============================================================================
-#  SECTION 15 — SSL with Certbot (per domain)
+#  SECTION 15 — SSL Stage B: Certbot per domain
 # =============================================================================
-section "15 / 15 — SSL / Certbot (per domain)"
+section "15 / 17 — SSL Stage B: Certbot"
 
 SSL_RESULTS=()
 
 obtain_cert() {
     local domain="$1" label="$2" extra_domains="${3:-}"
-    info "Requesting certificate for ${label} (${domain})..."
+    info "[Certbot] Requesting certificate: ${label} (${domain})..."
 
     local certbot_args=(
         --nginx --non-interactive --agree-tos
@@ -688,12 +788,20 @@ obtain_cert() {
     set -e
 
     if [ $exit_code -eq 0 ]; then
-        ok "SSL: ${domain} — certificate obtained"
-        SSL_RESULTS+=("${label}: OK")
+        # Verify cert files actually exist on disk
+        if [ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ] && \
+           [ -f "/etc/letsencrypt/live/${domain}/privkey.pem" ]; then
+            ok "[Certbot] ${domain} — certificate obtained and verified"
+            CERT_OK["${domain}"]=1
+            SSL_RESULTS+=("${label}: OK")
+        else
+            warn "[Certbot] ${domain} — certbot succeeded but cert files not found!"
+            SSL_RESULTS+=("${label}: CERT FILES MISSING")
+        fi
     else
-        warn "SSL: ${domain} — Certbot failed (exit ${exit_code})"
+        warn "[Certbot] ${domain} — failed (exit ${exit_code})"
         warn "  Run manually: sudo certbot --nginx -d ${domain} --email ${SSL_EMAIL}"
-        SSL_RESULTS+=("${label}: FAILED")
+        SSL_RESULTS+=("${label}: FAILED — domain stays HTTP-only")
     fi
 }
 
@@ -702,8 +810,61 @@ obtain_cert "${APP_DOMAIN}"     "app"
 obtain_cert "${ADMIN_DOMAIN}"   "admin"
 [ -n "${API_DOMAIN}" ] && obtain_cert "${API_DOMAIN}" "api"
 
-# Inject HSTS into SSL blocks
-info "Adding HSTS headers..."
+# =============================================================================
+#  SECTION 16 — SSL Stage C: Finalize — replace HTTP configs with full SSL
+# =============================================================================
+section "16 / 17 — SSL Stage C: Finalize"
+
+# Helper: apply full SSL template only if cert exists for the domain
+gen_ssl_vhost() {
+    local template="$1" output_name="$2" cert_domain="$3"
+    shift 3
+    local conf="/etc/nginx/sites-available/${output_name}"
+
+    # Check if cert exists for this domain
+    if [ -z "${CERT_OK[${cert_domain}]+_}" ]; then
+        info "[SSL Finalize] ${cert_domain}: no cert — keeping HTTP-only config"
+        return
+    fi
+
+    info "[SSL Finalize] ${cert_domain}: cert verified, applying full SSL template"
+    cp "${APP_DIR}/deploy/${template}" "${conf}"
+
+    # Apply all placeholder replacements
+    while [ $# -gt 0 ]; do
+        local placeholder="${1%%=*}"
+        local value="${1#*=}"
+        sed -i "s|{{${placeholder}}}|${value}|g" "${conf}"
+        shift
+    done
+
+    ok "[SSL Finalize] ${output_name} upgraded to SSL"
+}
+
+# Landing (cert domain = LANDING_DOMAIN, also covers www)
+gen_ssl_vhost "nginx-landing.conf.template" "${NGINX_PREFIX}-landing" "${LANDING_DOMAIN}" \
+    "LANDING_DOMAIN=${LANDING_DOMAIN}" \
+    "LANDING_ROOT=${LANDING_ROOT}"
+
+# App
+gen_ssl_vhost "nginx-app.conf.template" "${NGINX_PREFIX}-app" "${APP_DOMAIN}" \
+    "APP_DOMAIN=${APP_DOMAIN}" \
+    "APP_DIR=${APP_DIR}" \
+    "GUNICORN_BIND=${GUNICORN_BIND}"
+
+# Admin
+gen_ssl_vhost "nginx-admin.conf.template" "${NGINX_PREFIX}-admin" "${ADMIN_DOMAIN}" \
+    "ADMIN_DOMAIN=${ADMIN_DOMAIN}" \
+    "ADMIN_ROOT=${ADMIN_ROOT}"
+
+# API (optional)
+if [ -n "${API_DOMAIN}" ]; then
+    gen_ssl_vhost "nginx-api.conf.template" "${NGINX_PREFIX}-api" "${API_DOMAIN}" \
+        "API_DOMAIN=${API_DOMAIN}"
+fi
+
+# Inject HSTS into SSL server blocks
+info "[SSL Finalize] Adding HSTS headers..."
 for conf_file in /etc/nginx/sites-available/${NGINX_PREFIX}-*; do
     [ -f "$conf_file" ] || continue
     python3 - "${conf_file}" <<'PYEOF'
@@ -724,13 +885,21 @@ with open(path, 'w') as f:
     f.write(result)
 PYEOF
 done
-nginx -t && systemctl reload nginx || true
-ok "HSTS applied"
+
+info "[SSL Finalize] Testing final Nginx configuration..."
+if nginx -t; then
+    systemctl reload nginx
+    ok "[SSL Finalize] Nginx reloaded with final SSL configs"
+else
+    warn "[SSL Finalize] Nginx test failed after SSL template swap — reverting to HTTP"
+    warn "  The HTTP-only configs from Certbot are still active and working."
+    warn "  Check: nginx -t, then fix and reload manually."
+fi
 
 # =============================================================================
-#  Final health check
+#  SECTION 17 — Final health check
 # =============================================================================
-section "Final verification"
+section "17 / 17 — Final verification"
 
 systemctl is-active --quiet "${SERVICE_NAME}" \
     && ok "Service: ACTIVE" \

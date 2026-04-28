@@ -1,9 +1,35 @@
+import logging
+
 from flask import Blueprint
 from backend.saas.config.plans import PLANS, DEFAULT_PLAN
 from backend.saas.utils.responses import success
 
+logger = logging.getLogger(__name__)
+
 bp = Blueprint("public_config", __name__, url_prefix="/api/config")
 
+
+# ---------------------------------------------------------------------------
+# DB reader — returns None on any failure so defaults are always served
+# ---------------------------------------------------------------------------
+
+def _read_config(key: str):
+    """Read a platform_config row by key. Returns the jsonb value or None."""
+    try:
+        from backend.saas.db.base import fetch_one
+        row = fetch_one(
+            "SELECT value FROM platform_config WHERE key = %s", (key,)
+        )
+        if row and row.get("value"):
+            return row["value"]
+    except Exception:
+        logger.debug("platform_config read failed for key=%s, using defaults", key, exc_info=True)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Hardcoded defaults (unchanged from before)
+# ---------------------------------------------------------------------------
 
 def _plan_to_dict(code: str, p) -> dict:
     return {
@@ -42,7 +68,7 @@ def _plan_feature_list(code: str, p) -> list[str]:
     return base + ["Everything in Pro", "Priority support"]
 
 
-_BRAND = {
+_DEFAULT_BRAND = {
     "name": "LiveGine",
     "tagline": "Interactive live quiz experiences for your audience",
     "legalName": "LiveGine SaaS",
@@ -210,20 +236,185 @@ _SESSION = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Merge helpers — DB values override defaults, shape is always preserved
+# ---------------------------------------------------------------------------
+
+def _resolve_brand() -> dict:
+    """Merge site_config from DB into the default brand dict."""
+    db = _read_config("site_config")
+    if not db or not isinstance(db, dict):
+        return dict(_DEFAULT_BRAND)
+
+    return {
+        "name": db.get("brandName") or _DEFAULT_BRAND["name"],
+        "tagline": db.get("tagline") or _DEFAULT_BRAND["tagline"],
+        "legalName": db.get("legalName") or _DEFAULT_BRAND["legalName"],
+        "supportEmail": db.get("supportEmail") or _DEFAULT_BRAND["supportEmail"],
+        "dashboardUrl": db.get("dashboardUrl") or _DEFAULT_BRAND["dashboardUrl"],
+    }
+
+
+def _resolve_plans() -> list[dict]:
+    """Return plan list from DB if saved, otherwise from hardcoded PLANS."""
+    db = _read_config("plans")
+    if not db or not isinstance(db, list) or len(db) == 0:
+        return [_plan_to_dict(code, p) for code, p in PLANS.items()]
+
+    result = []
+    for raw in db:
+        if not isinstance(raw, dict):
+            continue
+        if raw.get("enabled") is False:
+            continue
+        code = raw.get("code", "")
+        limits = raw.get("limits") or {}
+        max_sessions = limits.get("maxActiveSessions", 1)
+        max_projects = limits.get("maxProjects", 1)
+        max_quizzes = limits.get("maxQuizzesPerProject", 3)
+        result.append({
+            "code": code,
+            "name": raw.get("name", code),
+            "price": raw.get("price", "$0"),
+            "period": raw.get("period", "/month"),
+            "tagline": raw.get("tagline", ""),
+            "description": raw.get("tagline", ""),
+            "recommended": bool(raw.get("recommended")),
+            "cta": raw.get("cta", "Get started"),
+            "features": _build_feature_list_from_limits(code, max_sessions, max_projects, max_quizzes),
+            "limits": {
+                "maxActiveSessions": max_sessions,
+                "maxProjects": max_projects,
+                "maxQuizzesPerProject": max_quizzes,
+            },
+            "flags": _resolve_plan_flags(code),
+        })
+    return result if result else [_plan_to_dict(code, p) for code, p in PLANS.items()]
+
+
+def _build_feature_list_from_limits(code: str, sessions: int, projects: int, quizzes: int) -> list[str]:
+    s = f"{sessions} active session{'s' if sessions > 1 else ''}"
+    pr = f"{projects} project{'s' if projects > 1 else ''}"
+    q = f"{quizzes} quiz{'zes' if quizzes > 1 else ''}"
+    base = [s, pr, q]
+    if code == "free":
+        return base + ["Simulation mode", "OBS overlay"]
+    if code == "pro":
+        return base + ["X2 bonus mechanic", "TTS audio", "Full analytics"]
+    return base + ["Everything in Pro", "Priority support"]
+
+
+def _resolve_plan_flags(code: str) -> dict:
+    """Compute per-plan flags from the global feature_flags config."""
+    db = _read_config("feature_flags")
+    if not db or not isinstance(db, dict):
+        plan = PLANS.get(code)
+        if plan:
+            return {
+                "x2Enabled": plan.x2_enabled,
+                "ttsEnabled": plan.tts_enabled,
+                "aiEnabled": plan.tts_enabled,
+                "musicEnabled": plan.tts_enabled,
+            }
+        return {"x2Enabled": False, "ttsEnabled": False, "aiEnabled": False, "musicEnabled": False}
+
+    flags = db.get("flags") or {}
+    is_paid = code not in ("free",)
+    return {
+        "x2Enabled": bool(flags.get("x2Enabled", True)) and is_paid,
+        "ttsEnabled": bool(flags.get("ttsEnabled", True)) and is_paid,
+        "aiEnabled": bool(flags.get("aiGeneratorEnabled", True)) and is_paid,
+        "musicEnabled": bool(flags.get("musicEnabled", True)) and is_paid,
+    }
+
+
+def _resolve_feature_groups(plans_list: list[dict]) -> list[dict]:
+    """Rebuild the feature comparison table from resolved plan data."""
+    plan_by_code = {p["code"]: p for p in plans_list}
+    free = plan_by_code.get("free", {})
+    pro = plan_by_code.get("pro", {})
+    premium = plan_by_code.get("premium", {})
+
+    def _lim(plan: dict, key: str) -> str:
+        return str(plan.get("limits", {}).get(key, "--"))
+
+    def _flag(plan: dict, key: str) -> bool:
+        return bool(plan.get("flags", {}).get(key, False))
+
+    return [
+        {
+            "groupLabel": "Capacity",
+            "iconName": "Layers",
+            "rows": [
+                {"label": "Active sessions", "values": {"free": _lim(free, "maxActiveSessions"), "pro": _lim(pro, "maxActiveSessions"), "premium": _lim(premium, "maxActiveSessions")}},
+                {"label": "Projects", "values": {"free": _lim(free, "maxProjects"), "pro": _lim(pro, "maxProjects"), "premium": _lim(premium, "maxProjects")}},
+                {"label": "Quizzes per project", "values": {"free": _lim(free, "maxQuizzesPerProject"), "pro": _lim(pro, "maxQuizzesPerProject"), "premium": _lim(premium, "maxQuizzesPerProject")}},
+            ],
+        },
+        {
+            "groupLabel": "Live features",
+            "iconName": "RadioTower",
+            "rows": [
+                {"label": "Simulation mode", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "TikTok live mode", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "Overlay URL", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "Live control dashboard", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "X2 bonus mechanic", "hint": "Double-score bonus round for top players",
+                 "values": {"free": _flag(free, "x2Enabled"), "pro": _flag(pro, "x2Enabled"), "premium": _flag(premium, "x2Enabled")}},
+            ],
+        },
+        {
+            "groupLabel": "AI & audio",
+            "iconName": "Cpu",
+            "rows": [
+                {"label": "AI quiz generation", "values": {"free": _flag(free, "aiEnabled"), "pro": _flag(pro, "aiEnabled"), "premium": _flag(premium, "aiEnabled")}},
+                {"label": "TTS voice narration", "hint": "Questions read aloud during live sessions",
+                 "values": {"free": _flag(free, "ttsEnabled"), "pro": _flag(pro, "ttsEnabled"), "premium": _flag(premium, "ttsEnabled")}},
+                {"label": "Music controls", "values": {"free": _flag(free, "musicEnabled"), "pro": _flag(pro, "musicEnabled"), "premium": _flag(premium, "musicEnabled")}},
+                {"label": "Audio volume control", "values": {"free": _flag(free, "musicEnabled"), "pro": _flag(pro, "musicEnabled"), "premium": _flag(premium, "musicEnabled")}},
+            ],
+        },
+        {
+            "groupLabel": "History & data",
+            "iconName": "Mic",
+            "rows": [
+                {"label": "Session history", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "Score persistence", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "Activity logs", "values": {"free": True, "pro": True, "premium": True}},
+            ],
+        },
+        {
+            "groupLabel": "Support",
+            "iconName": "HeartHandshake",
+            "rows": [
+                {"label": "Community support", "values": {"free": True, "pro": True, "premium": True}},
+                {"label": "Priority support", "values": {"free": False, "pro": False, "premium": True}},
+            ],
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Public endpoint
+# ---------------------------------------------------------------------------
+
 @bp.get("/public")
 def get_public_config():
     """Return full platform configuration.
 
-    Currently returns static defaults matching defaults.ts.
-    When the Super Admin panel is built, this will read from the database.
+    Reads from platform_config DB table for any admin-saved overrides,
+    then falls back to hardcoded defaults for anything not yet saved.
+    On any DB failure, returns full defaults — never breaks the frontend.
     """
-    plans = [_plan_to_dict(code, p) for code, p in PLANS.items()]
+    brand = _resolve_brand()
+    plans = _resolve_plans()
+    feature_groups = _resolve_feature_groups(plans)
 
     return success({
-        "brand": _BRAND,
+        "brand": brand,
         "plans": plans,
         "defaultPlanCode": DEFAULT_PLAN,
-        "featureGroups": _FEATURE_GROUPS,
+        "featureGroups": feature_groups,
         "landing": _LANDING,
         "ai": _AI,
         "session": _SESSION,

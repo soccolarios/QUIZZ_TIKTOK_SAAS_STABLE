@@ -35,7 +35,7 @@ def get_effective_plan_code(user_id: str) -> str:
 
     Priority order (highest wins):
       1. Suspended -> always "free"
-      2. Admin override -> admin_override_plan
+      2. Admin override -> admin_override_plan_code
       3. Subscription status not active/trialing -> "free"
       4. Stripe-managed plan_code from saas_subscriptions
       5. No subscription row -> "free"
@@ -49,7 +49,7 @@ def get_effective_plan_code(user_id: str) -> str:
     if sub.get("suspended_at") is not None:
         return "free"
 
-    override = sub.get("admin_override_plan")
+    override = sub.get("admin_override_plan_code")
     if override:
         return override
 
@@ -74,7 +74,7 @@ def set_admin_override(
     result = fetch_one(
         """
         UPDATE saas_subscriptions
-        SET admin_override_plan = %s,
+        SET admin_override_plan_code = %s,
             admin_override_reason = %s,
             admin_override_by = %s,
             admin_override_at = CASE WHEN %s IS NOT NULL THEN now() ELSE NULL END,
@@ -100,7 +100,7 @@ def set_suspended(user_id: str, suspended: bool, reason: str, admin_user_id: str
             """
             UPDATE saas_subscriptions
             SET suspended_at = now(),
-                suspended_reason = %s,
+                suspension_reason = %s,
                 updated_at = now()
             WHERE user_id = %s
             RETURNING *
@@ -112,7 +112,7 @@ def set_suspended(user_id: str, suspended: bool, reason: str, admin_user_id: str
             """
             UPDATE saas_subscriptions
             SET suspended_at = NULL,
-                suspended_reason = NULL,
+                suspension_reason = NULL,
                 updated_at = now()
             WHERE user_id = %s
             RETURNING *

@@ -77,7 +77,7 @@ function OverrideModal({ open, sub, onClose, onSaved }: OverrideModalProps) {
 
   useEffect(() => {
     if (open && sub) {
-      setPlanCode(sub.admin_override_plan);
+      setPlanCode(sub.admin_override_plan_code);
       setReason('');
     }
   }, [open, sub]);
@@ -206,7 +206,7 @@ function SuspendModal({ open, sub, onClose, onSaved }: SuspendModalProps) {
             <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-emerald-800">This account is currently suspended</p>
-              <p className="text-xs text-emerald-700 mt-0.5">Reason: {sub?.suspended_reason || 'No reason given'}</p>
+              <p className="text-xs text-emerald-700 mt-0.5">Reason: {sub?.suspension_reason || 'No reason given'}</p>
               <p className="text-xs text-emerald-600 mt-0.5">Since: {fmtDate(sub?.suspended_at ?? null)}</p>
             </div>
           </div>
@@ -329,7 +329,7 @@ export function AdminBillingPage() {
               <tbody className="divide-y divide-gray-800/50">
                 {filtered.map((sub) => {
                   const isSuspended = !!sub.suspended_at;
-                  const hasOverride = !!sub.admin_override_plan;
+                  const hasOverride = !!sub.admin_override_plan_code;
                   return (
                     <tr
                       key={sub.user_id}
@@ -362,7 +362,7 @@ export function AdminBillingPage() {
                       <td className="px-3 py-3">
                         {hasOverride ? (
                           <div>
-                            <span className="text-xs text-amber-400 font-medium">{sub.admin_override_plan}</span>
+                            <span className="text-xs text-amber-400 font-medium">{sub.admin_override_plan_code}</span>
                             {sub.admin_override_reason && (
                               <p className="text-[10px] text-gray-500 mt-0.5 truncate max-w-[150px]">
                                 {sub.admin_override_reason}

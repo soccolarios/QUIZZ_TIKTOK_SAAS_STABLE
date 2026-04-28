@@ -95,7 +95,7 @@ When a Super Admin disables a feature globally via Feature Flags in the admin pa
 | Priority | Condition | Effective Plan |
 |----------|-----------|----------------|
 | 1 (highest) | `suspended_at IS NOT NULL` | `free` |
-| 2 | `admin_override_plan IS NOT NULL` | override value |
+| 2 | `admin_override_plan_code IS NOT NULL` | override value |
 | 3 | `status NOT IN (active, trialing)` | `free` |
 | 4 | Normal | Stripe `plan_code` |
 | 5 (fallback) | No subscription row | `free` |
@@ -114,7 +114,7 @@ When a Super Admin disables a feature globally via Feature Flags in the admin pa
 
 | Action | Route | Effect |
 |--------|-------|--------|
-| Set plan override | `POST /api/admin/billing/subscriptions/:id/override` | Sets `admin_override_plan`, takes precedence over Stripe |
+| Set plan override | `POST /api/admin/billing/subscriptions/:id/override` | Sets `admin_override_plan_code`, takes precedence over Stripe |
 | Clear override | Same route with `plan_code: null` | Restores Stripe-managed plan |
 | Suspend account | `POST /api/admin/billing/subscriptions/:id/suspend` | Sets `suspended_at`, immediately restricts to free |
 | Unsuspend account | Same route with `suspended: false` | Clears `suspended_at`, restores previous effective plan |
@@ -167,7 +167,7 @@ Backend plan_guard.py
     |
     +-- get_effective_plan_code(user_id)
     |     +-- Check suspended_at -> free
-    |     +-- Check admin_override_plan -> override
+    |     +-- Check admin_override_plan_code -> override
     |     +-- Check status in (active, trialing) -> free if not
     |     +-- Return plan_code or fallback free
     +-- Look up plan limits (config/plans.py)

@@ -37,7 +37,7 @@ def _subscription_response(sub: dict | None, user_id: str) -> dict:
     effective = get_effective_plan_code(user_id)
     limits = get_plan(effective)
     raw_plan = (sub["plan_code"] if sub else "free") or "free"
-    is_overridden = sub and sub.get("admin_override_plan") is not None
+    is_overridden = sub and sub.get("admin_override_plan_code") is not None
     is_suspended = sub and sub.get("suspended_at") is not None
     return {
         "plan_code": effective,

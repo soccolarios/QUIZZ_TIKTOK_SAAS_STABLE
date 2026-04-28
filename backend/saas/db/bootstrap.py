@@ -241,12 +241,12 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
   current_period_start   timestamptz,
   current_period_end     timestamptz,
   cancel_at_period_end   boolean NOT NULL DEFAULT false,
-  admin_override_plan    text,
+  admin_override_plan_code    text,
   admin_override_reason  text,
   admin_override_by      uuid REFERENCES saas_users(id),
   admin_override_at      timestamptz,
   suspended_at           timestamptz,
-  suspended_reason       text,
+  suspension_reason       text,
   created_at             timestamptz NOT NULL DEFAULT now(),
   updated_at             timestamptz NOT NULL DEFAULT now(),
   UNIQUE (user_id)
@@ -260,9 +260,9 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'saas_subscriptions' AND column_name = 'admin_override_plan'
+    WHERE table_name = 'saas_subscriptions' AND column_name = 'admin_override_plan_code'
   ) THEN
-    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_plan text;
+    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_plan_code text;
     ALTER TABLE saas_subscriptions ADD COLUMN admin_override_reason text;
     ALTER TABLE saas_subscriptions ADD COLUMN admin_override_by uuid REFERENCES saas_users(id);
     ALTER TABLE saas_subscriptions ADD COLUMN admin_override_at timestamptz;
@@ -272,7 +272,7 @@ BEGIN
     WHERE table_name = 'saas_subscriptions' AND column_name = 'suspended_at'
   ) THEN
     ALTER TABLE saas_subscriptions ADD COLUMN suspended_at timestamptz;
-    ALTER TABLE saas_subscriptions ADD COLUMN suspended_reason text;
+    ALTER TABLE saas_subscriptions ADD COLUMN suspension_reason text;
   END IF;
 END $$;
 

@@ -35,6 +35,8 @@ class GameRuntime:
         self._on_log: Optional[Callable] = None
         self._config_snapshot: Optional[dict] = None
 
+        self._timeline_t0: Optional[float] = None
+        self._session_label: str = "?"
         self._ws_server: Optional[WebSocketServer] = None
         self._ws_loop: Optional[asyncio.AbstractEventLoop] = None
         self._ws_thread: Optional[threading.Thread] = None
@@ -96,6 +98,13 @@ class GameRuntime:
                 pass
         print(entry)
 
+    def _tl(self, event: str):
+        if self._timeline_t0 is not None:
+            elapsed = time.monotonic() - self._timeline_t0
+            print(f"[Timeline][session:{self._session_label}] +{elapsed:.2f}s {event}")
+        else:
+            print(f"[Timeline][session:{self._session_label}] {event}")
+
     def start_ws_server(self, port: int = None):
         if self._ws_server and self._ws_server.is_serving():
             self._log(f"WebSocket server already running on port {self._ws_server.port}")
@@ -117,6 +126,7 @@ class GameRuntime:
 
         if self._ws_ready.wait(timeout=10):
             self._log(f"[WS] WebSocket server bound on port {self._ws_server.port}")
+            self._tl("WS bound")
         else:
             self._log(f"[WS] WebSocket server failed to start on port {self._ws_server.port} within timeout")
 
@@ -149,6 +159,8 @@ class GameRuntime:
             self._set_state(RuntimeState.STARTING)
             self._error_message = None
             self._start_time = time.time()
+            self._timeline_t0 = time.monotonic()
+            self._tl("Session created")
             self._loop_exited.clear()
 
             self._config_snapshot = {
@@ -214,6 +226,7 @@ class GameRuntime:
             db_path=self._db_path,
             user_id=kwargs.get('user_id'),
         )
+        self._engine._timeline_t0 = self._timeline_t0
 
         if kwargs.get('no_tts', False):
             self._engine.tts.enabled = False
@@ -241,6 +254,7 @@ class GameRuntime:
 
         db_label = self._db_path or "default (data/scores.db)"
         self._log(f"Initializing game engine (db={db_label})...")
+        self._tl("Runtime start")
         await self._engine.initialize()
 
         self._set_state(RuntimeState.RUNNING)
@@ -258,6 +272,7 @@ class GameRuntime:
 
             self._set_state(RuntimeState.STOPPING)
 
+        self._tl("Runtime stop")
         self._log("Stopping game engine...")
 
         if self._engine and self._loop and not self._loop.is_closed():
@@ -285,6 +300,7 @@ class GameRuntime:
         ws_thread = self._ws_thread
 
         if ws and ws_loop and not ws_loop.is_closed():
+            self._tl("WS stop")
             self._log("Stopping WS server...")
             try:
                 future = asyncio.run_coroutine_threadsafe(ws.stop(), ws_loop)

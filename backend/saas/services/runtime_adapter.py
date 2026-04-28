@@ -25,6 +25,7 @@ from __future__ import annotations
 import sys
 import os
 import json
+import time
 import threading
 import logging
 from typing import Optional, Callable
@@ -83,6 +84,7 @@ class SaasSessionRuntime:
         self._failure_reason: Optional[str] = None
 
         self._snapshot_timer: Optional[threading.Timer] = None
+        self._timeline_t0: Optional[float] = None
 
         raw_vol = launch_options.get("music_volume")
         if raw_vol is not None:
@@ -105,6 +107,14 @@ class SaasSessionRuntime:
                 self._log_handler(self.session_id, entry)
             except Exception:
                 pass
+
+    def _tl(self, event: str):
+        sid = self.session_id[:8] if self.session_id else "?"
+        if self._timeline_t0 is not None:
+            elapsed = time.monotonic() - self._timeline_t0
+            print(f"[Timeline][session:{sid}] +{elapsed:.2f}s {event}")
+        else:
+            print(f"[Timeline][session:{sid}] {event}")
 
     def _persist_snapshot_async(self):
         snapshot = self.get_overlay_snapshot()
@@ -354,7 +364,12 @@ class SaasSessionRuntime:
             ).start()
 
         try:
+            self._timeline_t0 = time.monotonic()
+            self._tl("Session created")
+
             self._runtime = GameRuntime(db_path=self._ctx.db_path)
+            self._runtime._timeline_t0 = self._timeline_t0
+            self._runtime._session_label = self.session_id[:8] if self.session_id else "?"
 
             self._runtime.set_log_handler(lambda msg: self._log(msg))
             self._runtime.set_state_change_handler(self._on_state_change)
@@ -432,6 +447,7 @@ class SaasSessionRuntime:
             self._log("Emergency cleanup complete")
 
     def stop(self) -> bool:
+        self._tl("Runtime stop")
         self._log("Stop requested")
         self._cancel_periodic_snapshot()
         self._persist_snapshot_async()

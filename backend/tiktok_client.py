@@ -100,6 +100,17 @@ class TikTokClient:
         self._stop_flag = False       # set by disconnect() to kill the retry loop
         self._reconnect_task: Optional[asyncio.Task] = None
 
+        # Timeline (injected by engine)
+        self._timeline_t0: Optional[float] = None
+        self._session_label: str = "?"
+
+    def _tl(self, event: str):
+        if self._timeline_t0 is not None:
+            elapsed = time.monotonic() - self._timeline_t0
+            print(f"[Timeline][session:{self._session_label}] +{elapsed:.2f}s {event}")
+        else:
+            print(f"[Timeline][session:{self._session_label}] {event}")
+
     # -----------------------------------------------------------------------
     # Public API
     # -----------------------------------------------------------------------
@@ -131,6 +142,7 @@ class TikTokClient:
             self._last_error  = "No TikTok username provided"
             return
 
+        self._tl("TikTok connecting")
         print(f"[MODE] TikTok reel active pour @{self.username}")
 
         try:
@@ -245,10 +257,12 @@ class TikTokClient:
                     self._connected_at = time.time()
                     self._last_error   = None
                     delay = _RETRY_BASE_DELAY  # reset backoff on success
+                    self._tl("TikTok connected")
                     connected_this_attempt.set()
 
                 @self.client.on(DisconnectEvent)
                 async def on_disconnect(event: DisconnectEvent):
+                    self._tl("TikTok disconnected")
                     print("[TIKTOK] Deconnecte du live")
                     self.is_connected = False
                     disconnected_this_attempt.set()

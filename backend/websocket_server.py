@@ -24,6 +24,15 @@ class WebSocketServer:
         self._audio_token_received = False
         self._current_audio_sequence: str | None = None
         self._on_client_connect = None
+        self._timeline_t0 = None
+        self._session_label = "?"
+
+    def _tl(self, event: str):
+        if self._timeline_t0 is not None:
+            elapsed = time.monotonic() - self._timeline_t0
+            print(f"[Timeline][session:{self._session_label}] +{elapsed:.2f}s {event}")
+        else:
+            print(f"[Timeline][session:{self._session_label}] {event}")
 
     async def start(self):
         ws_cfg = cfg.get_section('websocket')
@@ -37,6 +46,7 @@ class WebSocketServer:
             compression=None
         )
         self._running = True
+        self._tl("WS bound")
         print(f"[WebSocket] Server bound and listening on ws://{self.host}:{self.port}")
 
     async def _handle_client(self, websocket: WebSocketServerProtocol, path: str = None):
@@ -322,6 +332,7 @@ class WebSocketServer:
             await self.server.wait_closed()
             self.server = None
 
+        self._tl("WS stop")
         print("[WebSocket] Server stopped")
 
     async def reset_clients(self):

@@ -96,6 +96,15 @@ class GameEngine:
         self._x2_open_start: Optional[datetime] = None
         self._x2_open_duration: float = 0.0
         self._current_phase_guard: Optional[PhaseGuard] = None
+        self._timeline_t0: Optional[float] = None
+
+    def _tl(self, event: str):
+        sid = self.session_id or "?"
+        if self._timeline_t0 is not None:
+            elapsed = time.monotonic() - self._timeline_t0
+            print(f"[Timeline][session:{sid}] +{elapsed:.2f}s {event}")
+        else:
+            print(f"[Timeline][session:{sid}] {event}")
 
     async def initialize(self):
         print("[Game] Initializing...")
@@ -115,7 +124,11 @@ class GameEngine:
 
         self.tts.set_ws_server(self.ws_server)
         self.ws_server._on_client_connect = self._get_snapshot_for_new_client
+        self.ws_server._timeline_t0 = self._timeline_t0
+        self.ws_server._session_label = str(self.session_id or "?")
 
+        self.tiktok._timeline_t0 = self._timeline_t0
+        self.tiktok._session_label = str(self.session_id or "?")
         self.tiktok.set_comment_handler(self._on_tiktok_comment)
         tiktok_task = asyncio.create_task(self._connect_tiktok_background())
         self._background_tasks.append(tiktok_task)
@@ -158,6 +171,7 @@ class GameEngine:
         elapsed = time.monotonic() - t0
         if self.ws_server.get_client_count() > 0:
             print(f"[Startup] Overlay connected in {elapsed:.2f}s ({self.ws_server.get_client_count()} client(s))")
+            self._tl("Overlay connected")
         else:
             print(f"[Startup] No overlay connected after {timeout}s, proceeding anyway")
 
@@ -189,6 +203,8 @@ class GameEngine:
             self.config.total_questions = num_questions
 
         self._startup_t0 = time.monotonic()
+        self._timeline_t0 = self._startup_t0
+        self._tl("Game start")
 
         self._build_questionnaire_queue()
 
@@ -365,6 +381,7 @@ class GameEngine:
         await asyncio.sleep(0)
         self.state = GameState.DOUBLE_OPEN
         self.x2.open_collection()
+        self._tl("X2 open")
         print("[X2] entering DOUBLE_OPEN")
         print("[X2] Double or Nothing: collecting registrations")
         if self._sim_service:
@@ -475,6 +492,7 @@ class GameEngine:
         total_in_session = self._count_total_questions()
         global_index = self._get_global_question_index()
 
+        self._tl(f"Question shown ({self.current_question_index + 1}/{len(self.current_questions)})")
         print(f"[Game] Question {self.current_question_index + 1}/{len(self.current_questions)} (global {global_index}/{total_in_session})")
         print(f"[Game] Type: {question.question_type} | Reponse correcte: {question.correct_answer}")
         if is_double:
@@ -700,6 +718,7 @@ class GameEngine:
         percentages = self._calculate_percentages()
         total_answers = sum(self.answer_counts.values())
 
+        self._tl(f"Result shown ({self.current_question_index + 1})")
         print(f"[Game] Showing result for question {self.current_question_index + 1}")
         print(f"[Game] Winners: {winner_display_names}")
         print(f"[Game] Fastest: {fastest_display_name}")
@@ -791,6 +810,7 @@ class GameEngine:
             for u in self.x2.state.failed
         ]
 
+        self._tl(f"X2 result ({len(successful_list)} success, {len(failed_list)} failed)")
         print(f"[X2] Showing double result: {len(successful_list)} success, {len(failed_list)} failed")
         await self.ws_server.send_double_result(successful_list, failed_list)
 
@@ -944,6 +964,7 @@ class GameEngine:
             print(f"[Game] End screen displayed - no audio, waiting {end_display_min}s")
 
         await self._pause_aware_sleep(end_display_min)
+        self._tl("Game end")
         print("[Game] Game ended!")
         self._log_phase_end(guard)
 

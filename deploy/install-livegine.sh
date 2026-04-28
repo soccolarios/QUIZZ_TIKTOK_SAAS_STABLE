@@ -430,46 +430,16 @@ ok "Frontend built -> ${APP_DIR}/dist/"
 # =============================================================================
 #  SECTION 9 — Static root placeholders
 # =============================================================================
-section "9 / 17 — Static placeholders"
+section "9 / 17 — Static sites"
 
-# Landing page placeholder
+# Landing page — deploy from deploy/landing/ in the repo
 mkdir -p "${LANDING_ROOT}"
-if [ ! -f "${LANDING_ROOT}/index.html" ]; then
-    cat > "${LANDING_ROOT}/index.html" <<'LANDING_HTML'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LiveGine — Interactive Live Experiences</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-       background:#0a0a0a;color:#e0e0e0;min-height:100vh;display:flex;
-       align-items:center;justify-content:center;text-align:center}
-  .wrap{max-width:480px;padding:2rem}
-  h1{font-size:2.5rem;font-weight:700;margin-bottom:.75rem;
-     background:linear-gradient(135deg,#00b4d8,#0077b6);
-     -webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  p{font-size:1.1rem;line-height:1.6;color:#999;margin-bottom:1.5rem}
-  a{color:#00b4d8;text-decoration:none;font-weight:600;
-    border:1px solid #00b4d8;padding:.6rem 1.5rem;border-radius:6px;
-    transition:all .2s}
-  a:hover{background:#00b4d8;color:#0a0a0a}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>LiveGine</h1>
-  <p>Interactive live quiz experiences for your audience. Engage, entertain, compete — in real time.</p>
-  <a href="https://app.livegine.com">Open Dashboard</a>
-</div>
-</body>
-</html>
-LANDING_HTML
-    ok "Landing placeholder created: ${LANDING_ROOT}/index.html"
+LANDING_SRC="${APP_DIR}/deploy/landing"
+if [ -d "${LANDING_SRC}" ] && [ -f "${LANDING_SRC}/index.html" ]; then
+    rsync -a "${LANDING_SRC}/" "${LANDING_ROOT}/"
+    ok "Landing page deployed from repo: ${LANDING_ROOT}/"
 else
-    ok "Landing page already exists (preserved)"
+    warn "deploy/landing/ not found in repo — landing directory left as-is"
 fi
 
 # Admin panel — served from the same SPA build (dist/).
@@ -967,7 +937,6 @@ echo "    /etc/nginx/sites-available/${NGINX_PREFIX}-admin"
 [ -n "${API_DOMAIN}" ] && echo "    /etc/nginx/sites-available/${NGINX_PREFIX}-api"
 echo ""
 echo -e "  ${YELLOW}Next steps:${NC}"
-echo "  1. Replace landing placeholder with your actual landing page"
-echo "  2. Add Stripe keys to ${ENV_FILE}"
-echo "  3. Restart: sudo systemctl restart ${SERVICE_NAME}"
+echo "  1. Add Stripe keys to ${ENV_FILE}"
+echo "  2. Restart: sudo systemctl restart ${SERVICE_NAME}"
 echo ""

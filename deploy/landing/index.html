@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiveGine — Interactive Live Quiz Experiences for Your Audience</title>
+<meta name="description" content="Run live quizzes on TikTok LIVE directly in OBS. Create quizzes, launch sessions, and let your viewers compete in real time through chat.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-dark:#0a0a0a;--bg-card:#141414;--bg-card-hover:#1a1a1a;
+  --text-primary:#f5f5f5;--text-secondary:#a0a0a0;--text-muted:#666;
+  --accent:#0ea5e9;--accent-hover:#38bdf8;--accent-glow:rgba(14,165,233,.15);
+  --border:#222;--border-hover:#333;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-pill:100px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg-dark);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ── Nav ─────────────────────────────── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 24px;transition:background .3s,border-color .3s,backdrop-filter .3s}
+.nav.scrolled{background:rgba(10,10,10,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1120px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo{width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;color:#fff}
+.nav-name{font-weight:700;font-size:15px;color:var(--text-primary)}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-link{font-size:13px;font-weight:500;color:var(--text-secondary);padding:6px 14px;border-radius:var(--radius-sm);text-decoration:none;transition:color .2s,background .2s}
+.nav-link:hover{color:var(--text-primary);background:rgba(255,255,255,.05)}
+.nav-cta{font-size:13px;font-weight:600;color:#fff;background:var(--accent);padding:8px 18px;border-radius:var(--radius-sm);text-decoration:none;transition:background .2s,transform .1s;border:none;cursor:pointer}
+.nav-cta:hover{background:var(--accent-hover);transform:translateY(-1px)}
+
+/* ── Hero ────────────────────────────── */
+.hero{position:relative;padding:140px 24px 100px;text-align:center;overflow:hidden}
+.hero-glow{position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse,rgba(14,165,233,.12) 0%,transparent 70%);pointer-events:none}
+.hero-glow-2{position:absolute;top:100px;right:-200px;width:500px;height:500px;background:radial-gradient(circle,rgba(6,182,212,.08) 0%,transparent 60%);pointer-events:none}
+.hero-content{position:relative;max-width:720px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-glow);border:1px solid rgba(14,165,233,.25);color:var(--accent);font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--radius-pill);margin-bottom:28px;letter-spacing:.02em}
+.hero-badge svg{width:14px;height:14px}
+.hero h1{font-size:clamp(2.5rem,6vw,3.75rem);font-weight:900;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.hero h1 .accent{background:linear-gradient(135deg,#0ea5e9,#06b6d4,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1rem,2.5vw,1.15rem);color:var(--text-secondary);max-width:540px;margin:0 auto 36px;line-height:1.7}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;padding:14px 28px;border-radius:var(--radius-md);text-decoration:none;transition:background .2s,transform .15s,box-shadow .2s;border:none;cursor:pointer;box-shadow:0 0 0 0 rgba(14,165,233,.3)}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-2px);box-shadow:0 8px 30px rgba(14,165,233,.25)}
+.btn-primary svg{width:16px;height:16px}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text-secondary);padding:14px 24px;border-radius:var(--radius-md);border:1px solid var(--border);text-decoration:none;transition:color .2s,border-color .2s,background .2s;background:transparent;cursor:pointer}
+.btn-secondary:hover{color:var(--text-primary);border-color:var(--border-hover);background:rgba(255,255,255,.03)}
+.hero-note{font-size:12px;color:var(--text-muted);margin-top:16px}
+
+/* ── Demo preview ────────────────────── */
+.demo{padding:20px 24px 80px;position:relative}
+.demo-inner{max-width:900px;margin:0 auto;border-radius:var(--radius-xl);overflow:hidden;border:1px solid var(--border);background:var(--bg-card);box-shadow:0 40px 80px -20px rgba(0,0,0,.6)}
+.demo-bar{height:40px;background:#111;display:flex;align-items:center;gap:6px;padding:0 14px;border-bottom:1px solid var(--border)}
+.demo-dot{width:10px;height:10px;border-radius:50%;background:#333}
+.demo-dot.r{background:#ff5f57}.demo-dot.y{background:#febc2e}.demo-dot.g{background:#28c840}
+.demo-screen{padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:24px;min-height:260px}
+.demo-overlay{background:linear-gradient(135deg,#0c1220,#0a1628);border-radius:var(--radius-md);padding:24px;border:1px solid rgba(14,165,233,.15);display:flex;flex-direction:column;gap:16px}
+.demo-q-badge{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
+.demo-q{font-size:15px;font-weight:700;color:var(--text-primary);line-height:1.4}
+.demo-answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.demo-answer{padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;text-align:center;border:1px solid rgba(255,255,255,.1)}
+.demo-answer.a{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.demo-answer.b{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.3);color:#7dd3fc}
+.demo-answer.c{background:rgba(234,179,8,.15);border-color:rgba(234,179,8,.3);color:#fde047}
+.demo-answer.d{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:#86efac}
+.demo-chat{background:var(--bg-card);border-radius:var(--radius-md);padding:20px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.demo-chat-title{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.demo-msg{display:flex;align-items:center;gap:8px;font-size:12px}
+.demo-msg .user{font-weight:600;color:var(--accent)}
+.demo-msg .text{color:var(--text-secondary)}
+.demo-timer{width:100%;height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:auto}
+.demo-timer-fill{height:100%;width:65%;background:linear-gradient(90deg,#0ea5e9,#06b6d4);border-radius:4px;animation:timer-pulse 2s ease-in-out infinite}
+@keyframes timer-pulse{0%,100%{opacity:.8}50%{opacity:1}}
+
+/* ── Benefits ────────────────────────── */
+.benefits{padding:80px 24px;border-top:1px solid var(--border)}
+.benefits-inner{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.benefit{display:flex;align-items:flex-start;gap:14px;padding:24px;border-radius:var(--radius-md);border:1px solid transparent;transition:border-color .2s,background .2s}
+.benefit:hover{border-color:var(--border);background:var(--bg-card)}
+.benefit-icon{width:40px;height:40px;border-radius:var(--radius-sm);background:var(--accent-glow);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.benefit-icon svg{width:18px;height:18px;color:var(--accent)}
+.benefit h3{font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:4px}
+.benefit p{font-size:13px;color:var(--text-secondary);line-height:1.55}
+
+/* ── Section headers ─────────────────── */
+.section-header{text-align:center;margin-bottom:56px}
+.section-header h2{font-size:clamp(1.5rem,4vw,2.25rem);font-weight:800;letter-spacing:-.02em;margin-bottom:12px}
+.section-header p{font-size:15px;color:var(--text-secondary);max-width:480px;margin:0 auto}
+
+/* ── Features ────────────────────────── */
+.features{padding:80px 24px;border-top:1px solid var(--border)}
+.features-grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;transition:border-color .2s,transform .2s,box-shadow .2s}
+.feature-card:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.feature-icon{width:44px;height:44px;border-radius:var(--radius-md);background:var(--accent-glow);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feature-icon svg{width:20px;height:20px;color:var(--accent)}
+.feature-card h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.feature-card p{font-size:13px;color:var(--text-secondary);line-height:1.55}
+
+/* ── Steps ───────────────────────────── */
+.steps{padding:80px 24px;border-top:1px solid var(--border)}
+.steps-grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;position:relative}
+.steps-line{display:none}
+.step{text-align:center}
+.step-num{width:44px;height:44px;border-radius:50%;background:transparent;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--accent);margin:0 auto 14px;position:relative;z-index:1}
+.step h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.step p{font-size:12px;color:var(--text-secondary);line-height:1.55}
+
+/* ── Pricing ─────────────────────────── */
+.pricing{padding:80px 24px;border-top:1px solid var(--border)}
+.pricing-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.plan{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;display:flex;flex-direction:column;gap:20px;transition:border-color .2s,transform .2s}
+.plan:hover{transform:translateY(-2px)}
+.plan.popular{border-color:var(--accent);box-shadow:0 0 60px rgba(14,165,233,.1)}
+.plan-badge{text-align:center;margin:-44px 0 0}
+.plan-badge span{display:inline-block;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:5px 14px;border-radius:var(--radius-pill);text-transform:uppercase;letter-spacing:.06em}
+.plan-header h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.plan-price{display:flex;align-items:baseline;gap:4px}
+.plan-price .amount{font-size:36px;font-weight:900;letter-spacing:-.02em}
+.plan-price .period{font-size:14px;color:var(--text-muted)}
+.plan-tagline{font-size:13px;color:var(--text-secondary)}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;flex:1}
+.plan-features li{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)}
+.plan-features li svg{width:16px;height:16px;color:#22c55e;flex-shrink:0}
+.plan-cta{display:block;text-align:center;padding:12px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;text-decoration:none;transition:background .2s,transform .1s;border:none;cursor:pointer}
+.plan-cta.primary{background:var(--accent);color:#fff}
+.plan-cta.primary:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.plan-cta.secondary{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}
+.plan-cta.secondary:hover{border-color:var(--border-hover);color:var(--text-primary)}
+
+/* ── FAQ ─────────────────────────────── */
+.faq{padding:80px 24px;border-top:1px solid var(--border)}
+.faq-list{max-width:640px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-item:last-child{border-bottom:none}
+.faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0;background:none;border:none;cursor:pointer;text-align:left;font:inherit;color:var(--text-primary);font-size:14px;font-weight:600;transition:color .2s}
+.faq-q:hover{color:var(--accent)}
+.faq-q svg{width:16px;height:16px;color:var(--text-muted);flex-shrink:0;transition:transform .25s}
+.faq-item.open .faq-q svg{transform:rotate(180deg)}
+.faq-a{font-size:13px;color:var(--text-secondary);line-height:1.7;padding-bottom:20px;display:none}
+.faq-item.open .faq-a{display:block}
+
+/* ── Final CTA ───────────────────────── */
+.final-cta{padding:100px 24px;text-align:center;position:relative;overflow:hidden}
+.final-cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(14,165,233,.1) 0%,transparent 70%);pointer-events:none}
+.final-cta-content{position:relative}
+.final-cta h2{font-size:clamp(1.75rem,4vw,2.5rem);font-weight:900;letter-spacing:-.02em;margin-bottom:12px}
+.final-cta p{font-size:15px;color:var(--text-secondary);max-width:420px;margin:0 auto 32px}
+
+/* ── Footer ──────────────────────────── */
+.footer{padding:32px 24px;border-top:1px solid var(--border)}
+.footer-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-brand{display:flex;align-items:center;gap:8px}
+.footer-logo{width:24px;height:24px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.footer-logo svg{width:12px;height:12px;color:#fff}
+.footer-name{font-size:13px;font-weight:700;color:var(--text-primary)}
+.footer-links{display:flex;align-items:center;gap:20px}
+.footer-links a{font-size:12px;color:var(--text-muted);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--text-secondary)}
+.footer-copy{font-size:12px;color:var(--text-muted)}
+
+/* ── Responsive ──────────────────────── */
+@media(max-width:768px){
+  .hero{padding:120px 20px 60px}
+  .hero h1{font-size:2.25rem}
+  .demo-screen{grid-template-columns:1fr;min-height:auto}
+  .benefits-inner{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr}
+  .steps-grid{grid-template-columns:1fr 1fr;gap:20px}
+  .pricing-grid{grid-template-columns:1fr;max-width:400px}
+  .plan.popular{order:-1}
+  .footer-inner{flex-direction:column;text-align:center}
+}
+@media(max-width:480px){
+  .hero h1{font-size:1.85rem}
+  .hero-actions{flex-direction:column;width:100%}
+  .btn-primary,.btn-secondary{width:100%;justify-content:center}
+  .nav-link.hide-mobile{display:none}
+  .steps-grid{grid-template-columns:1fr}
+  .demo-answers{grid-template-columns:1fr}
+}
+
+/* ── Animations ──────────────────────── */
+@keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fade-up .6s ease-out both}
+.delay-1{animation-delay:.1s}.delay-2{animation-delay:.2s}.delay-3{animation-delay:.3s}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ─────────────────────────────────────────────────────────────────── -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <span class="nav-name">LiveGine</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features" class="nav-link hide-mobile">Features</a>
+      <a href="#pricing" class="nav-link hide-mobile">Pricing</a>
+      <a href="#faq" class="nav-link hide-mobile">FAQ</a>
+      <a href="https://app.livegine.com" class="nav-link">Log in</a>
+      <a href="https://app.livegine.com" class="nav-cta">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
+  <div class="hero-content">
+    <div class="hero-badge animate-in">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Interactive live quiz experiences for your audience
+    </div>
+    <h1 class="animate-in delay-1">
+      Run live quizzes on<br><span class="accent">TikTok LIVE</span> directly in OBS
+    </h1>
+    <p class="hero-sub animate-in delay-2">
+      Create quizzes, launch sessions, and let your viewers compete in real time through chat. No coding, no plugins — just a URL in OBS.
+    </p>
+    <div class="hero-actions animate-in delay-3">
+      <a href="https://app.livegine.com" class="btn-primary">
+        Start for free
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a href="https://app.livegine.com" class="btn-secondary">Open the app</a>
+    </div>
+    <p class="hero-note">Free forever. No credit card required.</p>
+  </div>
+</section>
+
+<!-- ── Demo preview ────────────────────────────────────────────────────────── -->
+<section class="demo">
+  <div class="demo-inner animate-in">
+    <div class="demo-bar">
+      <span class="demo-dot r"></span>
+      <span class="demo-dot y"></span>
+      <span class="demo-dot g"></span>
+    </div>
+    <div class="demo-screen">
+      <div class="demo-overlay">
+        <span class="demo-q-badge">Question 3 of 10</span>
+        <p class="demo-q">Which planet is known as the Red Planet?</p>
+        <div class="demo-answers">
+          <div class="demo-answer a">A. Venus</div>
+          <div class="demo-answer b">B. Mars</div>
+          <div class="demo-answer c">C. Jupiter</div>
+          <div class="demo-answer d">D. Saturn</div>
+        </div>
+        <div class="demo-timer"><div class="demo-timer-fill"></div></div>
+      </div>
+      <div class="demo-chat">
+        <span class="demo-chat-title">TikTok LIVE Chat</span>
+        <div class="demo-msg"><span class="user">@sarah_plays</span><span class="text">B</span></div>
+        <div class="demo-msg"><span class="user">@quizking99</span><span class="text">B</span></div>
+        <div class="demo-msg"><span class="user">@liveviewer</span><span class="text">A</span></div>
+        <div class="demo-msg"><span class="user">@trivia_fan</span><span class="text">B</span></div>
+        <div class="demo-msg"><span class="user">@streamwatcher</span><span class="text">C</span></div>
+        <div class="demo-msg"><span class="user">@gamer_42</span><span class="text">B</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Benefits bar ────────────────────────────────────────────────────────── -->
+<section class="benefits">
+  <div class="benefits-inner">
+    <div class="benefit">
+      <div class="benefit-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div><h3>Live in under 5 minutes</h3><p>Create a quiz, copy the overlay URL into OBS, and start your session. That's it.</p></div>
+    </div>
+    <div class="benefit">
+      <div class="benefit-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div><h3>Zero friction for viewers</h3><p>Participants just type A, B, C, or D in chat. No app install, no signup needed.</p></div>
+    </div>
+    <div class="benefit">
+      <div class="benefit-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div><h3>Real-time engagement</h3><p>Scores update live on screen. Leaderboards keep viewers competing and watching.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ─────────────────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="section-header">
+    <h2>Everything you need to engage your audience</h2>
+    <p>Built specifically for TikTok LIVE streamers and content creators.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polygon points="10 8 16 11 10 14 10 8" fill="currentColor"/></svg></div>
+      <h3>Live overlay for OBS</h3>
+      <p>Copy a single URL into OBS and your quiz appears instantly on stream. No complex setup.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <h3>TikTok LIVE comments</h3>
+      <p>Participants answer in chat. The engine reads comments in real time and validates answers.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></div>
+      <h3>X2 bonus mechanic</h3>
+      <p>Activate a score multiplier mid-game to boost engagement and keep viewers hooked.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <h3>Session analytics</h3>
+      <p>Track every session: participants, scores, timing. Know what works and optimise your shows.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <h3>Simulation mode</h3>
+      <p>Test your quiz without going live. Simulate answers and validate your setup safely.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <h3>Multi-project</h3>
+      <p>Organise quizzes by project. Run different themes for different shows or audiences.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Steps ────────────────────────────────────────────────────────────────── -->
+<section class="steps">
+  <div class="section-header">
+    <h2>Live in 4 steps</h2>
+    <p>From zero to quiz in under 5 minutes.</p>
+  </div>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Create your quiz</h3>
+      <p>Add questions and answers in the dashboard. Takes 2 minutes.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>Copy the overlay URL</h3>
+      <p>Paste it as a browser source in OBS. Size and position it.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>Go live on TikTok</h3>
+      <p>Start your session from the dashboard. The engine connects automatically.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <h3>Watch participants play</h3>
+      <p>Viewers answer in chat. Scores update in real time on screen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pricing ──────────────────────────────────────────────────────────────── -->
+<section class="pricing" id="pricing">
+  <div class="section-header">
+    <h2>Simple, transparent pricing</h2>
+    <p>Start free. Upgrade when you grow.</p>
+  </div>
+  <div class="pricing-grid">
+    <!-- Free -->
+    <div class="plan">
+      <div class="plan-header">
+        <h3>Free</h3>
+        <div class="plan-price"><span class="amount">$0</span><span class="period">forever</span></div>
+        <p class="plan-tagline">Try the platform at no cost</p>
+      </div>
+      <ul class="plan-features">
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>1 active session</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>1 project</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>3 quizzes</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Simulation mode</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>OBS overlay</li>
+      </ul>
+      <a href="https://app.livegine.com" class="plan-cta secondary">Get started</a>
+    </div>
+    <!-- Pro -->
+    <div class="plan popular">
+      <div class="plan-badge"><span>Most popular</span></div>
+      <div class="plan-header">
+        <h3>Pro</h3>
+        <div class="plan-price"><span class="amount">$19</span><span class="period">/month</span></div>
+        <p class="plan-tagline">For creators going live regularly</p>
+      </div>
+      <ul class="plan-features">
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>5 active sessions</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>10 projects</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>50 quizzes</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>X2 bonus mechanic</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>TTS audio</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Full analytics</li>
+      </ul>
+      <a href="https://app.livegine.com" class="plan-cta primary">Start free trial</a>
+    </div>
+    <!-- Premium -->
+    <div class="plan">
+      <div class="plan-header">
+        <h3>Premium</h3>
+        <div class="plan-price"><span class="amount">$49</span><span class="period">/month</span></div>
+        <p class="plan-tagline">For agencies and power users</p>
+      </div>
+      <ul class="plan-features">
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>20 active sessions</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>100 projects</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>500 quizzes</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Everything in Pro</li>
+        <li><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Priority support</li>
+      </ul>
+      <a href="https://app.livegine.com" class="plan-cta secondary">Start free trial</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ──────────────────────────────────────────────────────────────────── -->
+<section class="faq" id="faq">
+  <div class="section-header">
+    <h2>Frequently asked questions</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item">
+      <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Do I need to install anything?
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">No. The dashboard is fully browser-based. Only OBS is needed on your streaming computer to display the overlay.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Can I test without going live?
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">Yes. Simulation mode lets you run a full quiz session without a TikTok LIVE, so you can rehearse and validate your setup.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        What happens if I cancel my subscription?
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">Your account reverts to the Free plan at the end of the billing period. You keep access to your projects and quizzes.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Can I run multiple sessions at the same time?
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">Yes, on Pro and Premium plans. Each session runs in full isolation with its own overlay URL and quiz engine.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Is my data safe?
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">Yes. Each user's data is isolated. Sessions, quizzes and scores are stored securely and never shared.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Final CTA ───────────────────────────────────────────────────────────── -->
+<section class="final-cta">
+  <div class="final-cta-glow"></div>
+  <div class="final-cta-content">
+    <h2>Ready to go live?</h2>
+    <p>Join streamers already using LiveGine to engage their audience every session.</p>
+    <a href="https://app.livegine.com" class="btn-primary">
+      Create free account
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <span class="footer-name">LiveGine</span>
+    </div>
+    <div class="footer-links">
+      <a href="https://app.livegine.com">Dashboard</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="mailto:support@livegine.com">Contact</a>
+    </div>
+    <p class="footer-copy" id="footer-year"></p>
+  </div>
+</footer>
+
+<script>
+// Nav scroll effect
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>20)},{passive:true});
+
+// Footer year
+document.getElementById('footer-year').textContent='\u00A9 '+new Date().getFullYear()+' LiveGine SaaS';
+
+// Intersection observer for scroll animations
+if('IntersectionObserver' in window){
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('animate-in');obs.unobserve(e.target)}});
+  },{threshold:.15});
+  document.querySelectorAll('.feature-card,.benefit,.step,.plan').forEach(el=>obs.observe(el));
+}
+</script>
+</body>
+</html>

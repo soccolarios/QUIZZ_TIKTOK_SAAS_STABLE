@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AdminApp } from './admin/AdminApp';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -141,8 +142,13 @@ function Dashboard() {
 
 function AppInner() {
   const { user, loading } = useAuth();
+  const isAdminRoute = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('admin') === '1' || window.location.pathname === '/admin';
+  }, []);
 
   if (loading) return <PageSpinner />;
+  if (isAdminRoute) return <AdminApp />;
   if (!user) return <AuthGate />;
   return <Dashboard />;
 }

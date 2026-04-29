@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import { Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useBrand } from '../context/PublicConfigContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ApiError } from '../api/client';
 
 interface LoginPageProps {
   onSwitchToRegister: () => void;
-  onForgotPassword: () => void;
 }
 
-export function LoginPage({ onSwitchToRegister, onForgotPassword }: LoginPageProps) {
+export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const { login } = useAuth();
-  const brand = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,7 +36,7 @@ export function LoginPage({ onSwitchToRegister, onForgotPassword }: LoginPagePro
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
             <Zap className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{brand.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">TikTok Quiz</h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
         </div>
 
@@ -54,26 +51,15 @@ export function LoginPage({ onSwitchToRegister, onForgotPassword }: LoginPagePro
               autoComplete="email"
               required
             />
-            <div>
-              <Input
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-              />
-              <div className="text-right mt-1.5">
-                <button
-                  type="button"
-                  onClick={onForgotPassword}
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Forgot password?
-                </button>
-              </div>
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              required
+            />
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}

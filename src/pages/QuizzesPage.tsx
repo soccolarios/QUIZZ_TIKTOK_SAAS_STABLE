@@ -10,7 +10,6 @@ import {
   GripVertical,
   Upload,
   Download,
-  Lock,
 } from 'lucide-react';
 import { quizzesApi } from '../api/quizzes';
 import { projectsApi } from '../api/projects';
@@ -25,7 +24,6 @@ import { ApiError } from '../api/client';
 import { QuestionRow } from '../components/quizzes/QuestionRow';
 import { AnswerOptionEditor } from '../components/quizzes/AnswerOptionEditor';
 import { QuizHeaderForm } from '../components/quizzes/QuizHeaderForm';
-import { usePlanLimits } from '../context/UserConfigContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -719,7 +717,6 @@ function QuizEditor({ quiz, projectName, onBack, onQuizUpdated, onQuizDeleted }:
 // ---------------------------------------------------------------------------
 
 export function QuizzesPage() {
-  const limits = usePlanLimits();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [filterProjectId, setFilterProjectId] = useState('');
@@ -778,11 +775,6 @@ export function QuizzesPage() {
   const fmtDate = (s: string) =>
     new Date(s).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const filteredQuizCount = filterProjectId
-    ? quizzes.filter((q) => q.project_id === filterProjectId).length
-    : quizzes.length;
-  const atQuota = !loading && !!filterProjectId && filteredQuizCount >= limits.maxQuizzesPerProject;
-
   if (activeQuiz) {
     return (
       <QuizEditor
@@ -803,24 +795,18 @@ export function QuizzesPage() {
           <p className="text-sm text-gray-500 mt-0.5">Gérez votre contenu de quiz</p>
         </div>
         <div className="flex items-center gap-2">
-          {atQuota && (
-            <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
-              <Lock className="w-3.5 h-3.5" />
-              {filteredQuizCount}/{limits.maxQuizzesPerProject} quizzes
-            </span>
-          )}
           <Button
             variant="secondary"
             icon={<Upload className="w-4 h-4" />}
             onClick={() => setImportOpen(true)}
-            disabled={projects.length === 0 || atQuota}
+            disabled={projects.length === 0}
           >
             Importer
           </Button>
           <Button
             icon={<Plus className="w-4 h-4" />}
             onClick={() => setCreateOpen(true)}
-            disabled={projects.length === 0 || atQuota}
+            disabled={projects.length === 0}
           >
             Nouveau quiz
           </Button>
@@ -855,7 +841,7 @@ export function QuizzesPage() {
           <p className="text-gray-500 text-sm mb-4">
             {projects.length === 0 ? 'Créez un projet en premier' : "Aucun quiz pour l'instant"}
           </p>
-          {projects.length > 0 && !atQuota && (
+          {projects.length > 0 && (
             <div className="flex items-center gap-2">
               <Button variant="secondary" icon={<Upload className="w-4 h-4" />} onClick={() => setImportOpen(true)}>
                 Importer
@@ -864,12 +850,6 @@ export function QuizzesPage() {
                 Créer un quiz
               </Button>
             </div>
-          )}
-          {atQuota && (
-            <p className="text-sm text-amber-600">
-              You've reached the quiz limit for this project ({limits.maxQuizzesPerProject}).
-              Upgrade your plan to add more.
-            </p>
           )}
         </div>
       ) : (

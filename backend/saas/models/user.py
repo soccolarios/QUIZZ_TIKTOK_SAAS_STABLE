@@ -44,11 +44,3 @@ def get_user_with_plan(user_id: str) -> dict | None:
 def email_exists(email: str) -> bool:
     row = fetch_one("SELECT 1 FROM saas_users WHERE email = %s", (email,))
     return row is not None
-
-
-def update_password(user_id: str, password_hash: str) -> None:
-    from backend.saas.db.base import execute
-    execute(
-        "UPDATE saas_users SET password_hash = %s, updated_at = now() WHERE id = %s",
-        (password_hash, user_id),
-    )

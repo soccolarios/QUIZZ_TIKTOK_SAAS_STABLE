@@ -8,7 +8,6 @@ from backend.saas.models.subscription import (
     get_subscription_by_user,
     get_subscription_by_stripe_customer,
     get_subscription_by_stripe_subscription,
-    get_effective_plan_code,
     upsert_subscription,
     set_stripe_customer_id,
     log_billing_event,
@@ -25,13 +24,6 @@ from backend.saas.services.stripe_service import (
     retrieve_subscription,
 )
 from backend.saas.config.plans import get_plan, PLANS
-from backend.saas.services.email_service import send_email
-from backend.saas.services.email_templates import (
-    render_subscription_activated,
-    render_payment_success,
-    render_payment_failed,
-    render_subscription_canceled,
-)
 from backend.saas.utils.responses import success, error, serialize_row
 
 logger = logging.getLogger(__name__)
@@ -40,39 +32,15 @@ bp = Blueprint("billing", __name__, url_prefix="/api/billing")
 _APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5173")
 
 
-def _send_billing_email(user_id: str, render_fn, *render_args):
-    """Fire-and-forget billing email. Never raises."""
-    try:
-        user = get_user_by_id(user_id)
-        if not user:
-            return
-        email = user["email"]
-        subject, html, text = render_fn(email, *render_args)
-        template_key = render_fn.__name__.replace("render_", "")
-        send_email(
-            to_email=email, to_name=email, subject=subject,
-            html_body=html, text_body=text,
-            template_key=template_key, user_id=user_id,
-        )
-    except Exception:
-        logger.warning("Failed to send billing email for user %s", user_id, exc_info=True)
-
-
 def _subscription_response(sub: dict | None, user_id: str) -> dict:
-    effective = get_effective_plan_code(user_id)
-    limits = get_plan(effective)
-    raw_plan = (sub["plan_code"] if sub else "free") or "free"
-    is_overridden = sub and sub.get("admin_override_plan_code") is not None
-    is_suspended = sub and sub.get("suspended_at") is not None
+    plan_code = (sub["plan_code"] if sub else "free") or "free"
+    limits = get_plan(plan_code)
     return {
-        "plan_code": effective,
-        "stripe_plan_code": raw_plan,
+        "plan_code": plan_code,
         "display_name": limits.display_name,
-        "status": "suspended" if is_suspended else (sub["status"] if sub else "active"),
+        "status": sub["status"] if sub else "active",
         "current_period_end": sub["current_period_end"].isoformat() if sub and sub.get("current_period_end") else None,
         "cancel_at_period_end": sub["cancel_at_period_end"] if sub else False,
-        "admin_override": is_overridden,
-        "suspended": bool(is_suspended),
         "limits": {
             "max_active_sessions": limits.max_active_sessions,
             "max_projects": limits.max_projects,
@@ -184,37 +152,24 @@ def stripe_webhook():
         if event_type == "checkout.session.completed":
             _handle_checkout_completed(data_obj)
             user_id = (data_obj.get("metadata") or {}).get("user_id")
-            if user_id:
-                plan_name = get_plan(get_effective_plan_code(user_id)).display_name
-                _send_billing_email(user_id, render_subscription_activated, plan_name)
 
         elif event_type in ("customer.subscription.created", "customer.subscription.updated"):
             user_id = _handle_subscription_upsert(data_obj)
 
         elif event_type == "customer.subscription.deleted":
-            old_plan = None
-            customer_id_del = data_obj.get("customer")
-            sub_row_del = get_subscription_by_stripe_customer(customer_id_del)
-            if sub_row_del:
-                old_plan = get_plan(sub_row_del.get("plan_code") or "free").display_name
             user_id = _handle_subscription_deleted(data_obj)
-            if user_id and old_plan and old_plan != "Free":
-                _send_billing_email(user_id, render_subscription_canceled, old_plan)
 
         elif event_type == "invoice.paid":
             customer_id = data_obj.get("customer")
             sub = get_subscription_by_stripe_customer(customer_id)
             if sub:
                 user_id = str(sub["user_id"])
-                plan_name = get_plan(sub.get("plan_code") or "free").display_name
-                _send_billing_email(user_id, render_payment_success, plan_name)
 
         elif event_type == "invoice.payment_failed":
             customer_id = data_obj.get("customer")
             sub_row = get_subscription_by_stripe_customer(customer_id)
             if sub_row:
                 user_id = str(sub_row["user_id"])
-                plan_name = get_plan(sub_row.get("plan_code") or "free").display_name
                 logger.warning(
                     "invoice.payment_failed customer=%s user=%s — marking past_due, keeping plan=%s",
                     customer_id, user_id, sub_row["plan_code"],
@@ -225,7 +180,6 @@ def stripe_webhook():
                     status="past_due",
                     allow_downgrade=True,
                 )
-                _send_billing_email(user_id, render_payment_failed, plan_name)
 
     except Exception:
         logger.exception("Error processing Stripe event %s", event_id)

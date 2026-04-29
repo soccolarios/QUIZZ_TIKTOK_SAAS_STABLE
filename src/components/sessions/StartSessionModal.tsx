@@ -26,7 +26,6 @@ import { quizzesApi } from '../../api/quizzes';
 import { sessionsApi, type StartSessionParams, type PlayMode, type OverlayTemplate } from '../../api/sessions';
 import { billingApi, type PlanLimits } from '../../api/billing';
 import { musicApi, type MusicTrack } from '../../api/music';
-import { useSessionDefaults } from '../../context/PublicConfigContext';
 import type { Project, Quiz } from '../../api/types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -184,15 +183,52 @@ function TimeInput({ label, icon, value, onChange, min, max, unit, hint, presets
 }
 
 // ---------------------------------------------------------------------------
-// Play mode icon map
+// Play mode definitions
 // ---------------------------------------------------------------------------
 
-const PLAY_MODE_ICONS: Record<string, React.ReactNode> = {
-  single:      <SkipForward className="w-3.5 h-3.5" />,
-  loop_single: <Repeat1     className="w-3.5 h-3.5" />,
-  sequential:  <ListOrdered className="w-3.5 h-3.5" />,
-  loop_all:    <Repeat      className="w-3.5 h-3.5" />,
-};
+const PLAY_MODES: { value: PlayMode; label: string; hint: string; icon: React.ReactNode }[] = [
+  {
+    value: 'single',
+    label: 'Single quiz',
+    hint: 'Play the selected quiz once from start to finish.',
+    icon: <SkipForward className="w-3.5 h-3.5" />,
+  },
+  {
+    value: 'loop_single',
+    label: 'Loop this quiz',
+    hint: 'Repeat the selected quiz continuously.',
+    icon: <Repeat1 className="w-3.5 h-3.5" />,
+  },
+  {
+    value: 'sequential',
+    label: 'All quizzes',
+    hint: 'Play all project quizzes in order, once.',
+    icon: <ListOrdered className="w-3.5 h-3.5" />,
+  },
+  {
+    value: 'loop_all',
+    label: 'Loop all quizzes',
+    hint: 'Cycle through all project quizzes continuously.',
+    icon: <Repeat className="w-3.5 h-3.5" />,
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Overlay template definitions
+// ---------------------------------------------------------------------------
+
+const OVERLAY_TEMPLATES: { value: OverlayTemplate; label: string; hint: string }[] = [
+  {
+    value: 'default',
+    label: 'Default',
+    hint: 'Animated gradient with depth orbs and particle effects.',
+  },
+  {
+    value: 'football',
+    label: 'Football',
+    hint: 'Stadium-themed design for sports-focused streams.',
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Main modal
@@ -223,19 +259,6 @@ interface StartSessionModalProps {
 }
 
 export function StartSessionModal({ open, onClose, onStarted, prefill }: StartSessionModalProps) {
-  const sessionCfg = useSessionDefaults();
-  const PLAY_MODES = sessionCfg.playModes.map((m) => ({
-    value: m.value as PlayMode,
-    label: m.label,
-    hint: m.hint,
-    icon: PLAY_MODE_ICONS[m.value] ?? <SkipForward className="w-3.5 h-3.5" />,
-  }));
-  const OVERLAY_TEMPLATES = sessionCfg.overlayTemplates.map((t) => ({
-    value: t.value as OverlayTemplate,
-    label: t.label,
-    hint: t.hint,
-  }));
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [limits, setLimits] = useState<PlanLimits | null>(null);
@@ -250,8 +273,8 @@ export function StartSessionModal({ open, onClose, onStarted, prefill }: StartSe
   const [overlayTemplate, setOverlayTemplate] = useState<OverlayTemplate>('default');
   const [musicTrackSlug, setMusicTrackSlug] = useState('none');
   const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
-  const [questionTime, setQuestionTime] = useState(String(sessionCfg.questionTimerDefault));
-  const [countdownTime, setCountdownTime] = useState(String(sessionCfg.countdownDefault));
+  const [questionTime, setQuestionTime] = useState('30');
+  const [countdownTime, setCountdownTime] = useState('5');
 
   const [loadingData, setLoadingData] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(false);
@@ -274,11 +297,7 @@ export function StartSessionModal({ open, onClose, onStarted, prefill }: StartSe
       if (prefill.musicTrackSlug)  setMusicTrackSlug(prefill.musicTrackSlug);
     }
     setLoadingData(true);
-    Promise.all([
-      projectsApi.list(),
-      billingApi.getSubscription(),
-      musicApi.list().catch(() => [] as MusicTrack[]),
-    ])
+    Promise.all([projectsApi.list(), billingApi.getSubscription(), musicApi.list()])
       .then(([projs, sub, tracks]) => {
         setProjects(projs);
         setLimits(sub.limits);

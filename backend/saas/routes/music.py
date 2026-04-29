@@ -10,11 +10,10 @@ GET /api/music/
 
 from typing import Optional
 
-from flask import Blueprint, g
+from flask import Blueprint
 from backend.saas.auth.middleware import require_auth
 from backend.saas.db.base import fetch_all, fetch_one
-from backend.saas.services.plan_guard import check_can_use_music
-from backend.saas.utils.responses import success, error
+from backend.saas.utils.responses import success
 
 bp = Blueprint("music", __name__, url_prefix="/api/music")
 
@@ -49,9 +48,6 @@ def resolve_slug_to_file_name(slug: Optional[str]) -> Optional[str]:
 @bp.get("/")
 @require_auth
 def list_tracks():
-    allowed, guard_msg = check_can_use_music(g.current_user_id)
-    if not allowed:
-        return error(guard_msg, 403)
     rows = fetch_all(
         "SELECT id, slug, name, genre, duration_sec, sort_order "
         "FROM saas_music_tracks WHERE active = true ORDER BY sort_order, name",

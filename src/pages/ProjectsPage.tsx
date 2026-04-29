@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, FolderOpen, Lock } from 'lucide-react';
+import { Plus, Pencil, Trash2, FolderOpen } from 'lucide-react';
 import { projectsApi } from '../api/projects';
 import type { Project } from '../api/types';
 import { Card, CardHeader } from '../components/ui/Card';
@@ -10,7 +10,6 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/layout/DashboardLayout';
 import { ApiError } from '../api/client';
-import { usePlanLimits } from '../context/UserConfigContext';
 
 export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -21,8 +20,6 @@ export function ProjectsPage() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState('');
-  const limits = usePlanLimits();
-  const atLimit = !loading && projects.length >= limits.maxProjects;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,17 +96,9 @@ export function ProjectsPage() {
           <h1 className="text-xl font-bold text-gray-900">Projects</h1>
           <p className="text-sm text-gray-500 mt-0.5">Organize your quizzes into projects</p>
         </div>
-        <div className="flex items-center gap-3">
-          {atLimit && (
-            <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
-              <Lock className="w-3.5 h-3.5" />
-              {projects.length}/{limits.maxProjects} projects
-            </span>
-          )}
-          <Button icon={<Plus className="w-4 h-4" />} onClick={openCreate} disabled={atLimit}>
-            New project
-          </Button>
-        </div>
+        <Button icon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+          New project
+        </Button>
       </div>
 
       {loading ? (

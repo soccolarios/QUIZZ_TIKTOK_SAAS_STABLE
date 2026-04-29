@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { PublicConfigProvider } from './context/PublicConfigContext';
-import { UserConfigProvider } from './context/UserConfigContext';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { QuizzesPage } from './pages/QuizzesPage';
@@ -18,44 +15,33 @@ import { BillingPage } from './pages/BillingPage';
 import { AccountPage } from './pages/AccountPage';
 import { DashboardLayout, toast } from './components/layout/DashboardLayout';
 import { PageSpinner } from './components/ui/Spinner';
-import { AdminApp } from './admin/AdminApp';
 import type { NavPage } from './components/layout/Sidebar';
 import type { Session } from './api/types';
 import { isActiveStatus } from './utils/sessionStatus';
 
-const isAdminMode =
-  window.location.hostname.startsWith('admin.') ||
-  window.location.pathname.startsWith('/admin');
+type AuthView = 'landing' | 'login' | 'register';
 
-type AuthView = 'login' | 'register' | 'forgot-password' | 'reset-password';
+function AuthGate({ defaultView }: { defaultView?: AuthView }) {
+  const [view, setView] = useState<AuthView>(defaultView ?? 'landing');
 
-function AuthGate() {
-  const params = new URLSearchParams(window.location.search);
-  const resetToken = params.get('token');
-  const isResetPath = window.location.pathname === '/reset-password';
-
-  const [view, setView] = useState<AuthView>(
-    isResetPath && resetToken ? 'reset-password' : 'login'
-  );
-
-  const handleResetDone = () => {
-    window.history.replaceState({}, '', '/');
-    setView('login');
-  };
-
-  if (view === 'reset-password' && resetToken) {
-    return <ResetPasswordPage token={resetToken} onDone={handleResetDone} />;
-  }
-  if (view === 'forgot-password') {
-    return <ForgotPasswordPage onBack={() => setView('login')} />;
+  if (view === 'login') {
+    return (
+      <LoginPage
+        onSwitchToRegister={() => setView('register')}
+      />
+    );
   }
   if (view === 'register') {
-    return <RegisterPage onSwitchToLogin={() => setView('login')} />;
+    return (
+      <RegisterPage
+        onSwitchToLogin={() => setView('login')}
+      />
+    );
   }
   return (
-    <LoginPage
-      onSwitchToRegister={() => setView('register')}
-      onForgotPassword={() => setView('forgot-password')}
+    <LandingPage
+      onGetStarted={() => setView('register')}
+      onLogin={() => setView('login')}
     />
   );
 }
@@ -156,23 +142,15 @@ function Dashboard() {
 function AppInner() {
   const { user, loading } = useAuth();
 
-  if (isAdminMode) return <AdminApp />;
-
   if (loading) return <PageSpinner />;
   if (!user) return <AuthGate />;
-  return (
-    <UserConfigProvider>
-      <Dashboard />
-    </UserConfigProvider>
-  );
+  return <Dashboard />;
 }
 
 export default function App() {
   return (
-    <PublicConfigProvider>
-      <AuthProvider>
-        <AppInner />
-      </AuthProvider>
-    </PublicConfigProvider>
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }

@@ -1,7 +1,5 @@
-import { FolderOpen, BookOpen, PlayCircle, LogOut, Zap, User, CreditCard, LayoutDashboard, Sparkles, Rocket, Lock } from 'lucide-react';
+import { FolderOpen, BookOpen, PlayCircle, LogOut, Zap, User, CreditCard, LayoutDashboard, Sparkles, Rocket } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useBrand, usePlans } from '../../context/PublicConfigContext';
-import { usePlanFlags } from '../../context/UserConfigContext';
 
 export type NavPage = 'overview' | 'projects' | 'quizzes' | 'ai-generator' | 'sessions' | 'launch' | 'billing' | 'account';
 
@@ -25,14 +23,17 @@ const planColors: Record<string, string> = {
   premium: 'bg-amber-500 text-white',
 };
 
+const planLabels: Record<string, string> = {
+  free: 'Free',
+  pro: 'Pro',
+  premium: 'Premium',
+};
+
 export function Sidebar({ current, onChange }: SidebarProps) {
   const { user, logout } = useAuth();
-  const brand = useBrand();
-  const { plans } = usePlans();
-  const flags = usePlanFlags();
 
   const planCode = user?.plan_code || 'free';
-  const planLabel = plans.find((p) => p.code === planCode)?.name ?? planCode;
+  const planLabel = planLabels[planCode] || planCode;
 
   return (
     <aside className="w-56 bg-gray-900 flex flex-col min-h-screen">
@@ -41,7 +42,7 @@ export function Sidebar({ current, onChange }: SidebarProps) {
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-semibold text-white">{brand.name}</span>
+          <span className="text-sm font-semibold text-white">TikTok Quiz</span>
         </div>
       </div>
 
@@ -65,13 +66,9 @@ export function Sidebar({ current, onChange }: SidebarProps) {
               {item.icon}
               {item.label}
               {item.highlight && !isActive && (
-                flags.aiEnabled ? (
-                  <span className="ml-auto text-[9px] font-bold bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-                    IA
-                  </span>
-                ) : (
-                  <Lock className="ml-auto w-3 h-3 text-gray-500" />
-                )
+                <span className="ml-auto text-[9px] font-bold bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                  IA
+                </span>
               )}
             </button>
           );

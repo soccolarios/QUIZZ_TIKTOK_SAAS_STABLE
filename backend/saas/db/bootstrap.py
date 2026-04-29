@@ -241,40 +241,12 @@ CREATE TABLE IF NOT EXISTS saas_subscriptions (
   current_period_start   timestamptz,
   current_period_end     timestamptz,
   cancel_at_period_end   boolean NOT NULL DEFAULT false,
-  admin_override_plan_code    text,
-  admin_override_reason  text,
-  admin_override_by      uuid REFERENCES saas_users(id),
-  admin_override_at      timestamptz,
-  suspended_at           timestamptz,
-  suspension_reason       text,
   created_at             timestamptz NOT NULL DEFAULT now(),
   updated_at             timestamptz NOT NULL DEFAULT now(),
   UNIQUE (user_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_saas_subscriptions_user_id ON saas_subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS idx_saas_subscriptions_status ON saas_subscriptions(status);
-
--- Idempotent: add admin override and suspension columns for existing deployments
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'saas_subscriptions' AND column_name = 'admin_override_plan_code'
-  ) THEN
-    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_plan_code text;
-    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_reason text;
-    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_by uuid REFERENCES saas_users(id);
-    ALTER TABLE saas_subscriptions ADD COLUMN admin_override_at timestamptz;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'saas_subscriptions' AND column_name = 'suspended_at'
-  ) THEN
-    ALTER TABLE saas_subscriptions ADD COLUMN suspended_at timestamptz;
-    ALTER TABLE saas_subscriptions ADD COLUMN suspension_reason text;
-  END IF;
-END $$;
 
 DROP TRIGGER IF EXISTS trg_saas_subscriptions_updated_at ON saas_subscriptions;
 CREATE TRIGGER trg_saas_subscriptions_updated_at
@@ -300,16 +272,15 @@ CREATE INDEX IF NOT EXISTS idx_saas_billing_events_stripe_event_id
 -- saas_music_tracks  (admin-managed background music catalog)
 -- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS saas_music_tracks (
-  id                 uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug               text        UNIQUE NOT NULL,
-  name               text        NOT NULL,
-  genre              text        NOT NULL DEFAULT 'General',
-  duration_sec       integer,
-  file_name          text,
-  active             boolean     NOT NULL DEFAULT true,
-  sort_order         integer     NOT NULL DEFAULT 0,
-  required_plan_code text,
-  created_at         timestamptz NOT NULL DEFAULT now()
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug         text        UNIQUE NOT NULL,
+  name         text        NOT NULL,
+  genre        text        NOT NULL DEFAULT 'General',
+  duration_sec integer,
+  file_name    text,
+  active       boolean     NOT NULL DEFAULT true,
+  sort_order   integer     NOT NULL DEFAULT 0,
+  created_at   timestamptz NOT NULL DEFAULT now()
 );
 
 -- Idempotent: add file_name column for existing deployments upgrading from older schema.
@@ -320,12 +291,6 @@ BEGIN
     WHERE table_name = 'saas_music_tracks' AND column_name = 'file_name'
   ) THEN
     ALTER TABLE saas_music_tracks ADD COLUMN file_name text;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'saas_music_tracks' AND column_name = 'required_plan_code'
-  ) THEN
-    ALTER TABLE saas_music_tracks ADD COLUMN required_plan_code text;
   END IF;
 END $$;
 
@@ -341,74 +306,6 @@ INSERT INTO saas_music_tracks (slug, name, genre, duration_sec, sort_order) VALU
   ('lofi_1',      'Lo-Fi Focus',   'Chill',  240,  40),
   ('retro_1',     'Retro Arcade',  'Retro',  160,  50)
 ON CONFLICT (slug) DO NOTHING;
-
--- -------------------------------------------------------
--- platform_config  (admin-managed key/value config store)
--- -------------------------------------------------------
-CREATE TABLE IF NOT EXISTS platform_config (
-  key         text        PRIMARY KEY,
-  value       jsonb       NOT NULL DEFAULT '{}',
-  updated_at  timestamptz NOT NULL DEFAULT now(),
-  updated_by  uuid        REFERENCES saas_users(id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_platform_config_updated_at
-  ON platform_config(updated_at);
-
-DROP TRIGGER IF EXISTS trg_platform_config_updated_at ON platform_config;
-CREATE TRIGGER trg_platform_config_updated_at
-  BEFORE UPDATE ON platform_config
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- -------------------------------------------------------
--- password_reset_tokens
--- -------------------------------------------------------
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     uuid        NOT NULL REFERENCES saas_users(id) ON DELETE CASCADE,
-  token_hash  text        UNIQUE NOT NULL,
-  expires_at  timestamptz NOT NULL,
-  consumed_at timestamptz,
-  created_at  timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id
-  ON password_reset_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at
-  ON password_reset_tokens(expires_at);
-
--- -------------------------------------------------------
--- email_log
--- -------------------------------------------------------
-CREATE TABLE IF NOT EXISTS email_log (
-  id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id             uuid        REFERENCES saas_users(id) ON DELETE SET NULL,
-  recipient_email     text        NOT NULL,
-  template_key        text        NOT NULL,
-  subject             text        NOT NULL DEFAULT '',
-  provider            text        NOT NULL DEFAULT 'mailjet',
-  provider_message_id text,
-  status              text        NOT NULL DEFAULT 'sent',
-  error_message       text,
-  created_at          timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_email_log_user_id ON email_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_email_log_template_key ON email_log(template_key);
-CREATE INDEX IF NOT EXISTS idx_email_log_created_at ON email_log(created_at);
-
--- -------------------------------------------------------
--- auth_rate_limits  (per-action, per-identifier rate tracking)
--- -------------------------------------------------------
-CREATE TABLE IF NOT EXISTS auth_rate_limits (
-  id          bigserial   PRIMARY KEY,
-  action      text        NOT NULL,
-  identifier  text        NOT NULL,
-  created_at  timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_action_identifier
-  ON auth_rate_limits(action, identifier, created_at);
 """
 
 

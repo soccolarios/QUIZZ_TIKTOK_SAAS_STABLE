@@ -10,7 +10,6 @@ import {
   AlertCircle,
   Loader2,
   Plus,
-  Lock,
 } from 'lucide-react';
 import { aiApi } from '../api/ai';
 import { quizzesApi } from '../api/quizzes';
@@ -23,8 +22,36 @@ import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/layout/DashboardLayout';
 import { ApiError } from '../api/client';
-import { useAiDefaults } from '../context/PublicConfigContext';
-import { usePlanFlags } from '../context/UserConfigContext';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const PRESETS: { id: string; label: string; emoji: string; theme: string; category: string }[] = [
+  { id: 'culture', label: 'Culture générale', emoji: '🌍', theme: 'Culture générale', category: 'culture_generale' },
+  { id: 'sport', label: 'Sport', emoji: '⚽', theme: 'Sport et compétitions sportives', category: 'sport' },
+  { id: 'cinema', label: 'Cinéma', emoji: '🎬', theme: 'Cinéma et films', category: 'cinema' },
+  { id: 'sciences', label: 'Sciences', emoji: '🔬', theme: 'Sciences et découvertes', category: 'sciences' },
+  { id: 'histoire', label: 'Histoire', emoji: '📜', theme: 'Histoire mondiale', category: 'histoire' },
+  { id: 'musique', label: 'Musique', emoji: '🎵', theme: 'Musique et artistes', category: 'musique' },
+  { id: 'geographie', label: 'Géographie', emoji: '🗺️', theme: 'Géographie mondiale', category: 'geographie' },
+  { id: 'tech', label: 'Technologie', emoji: '💻', theme: 'Technologie et informatique', category: 'technologie' },
+];
+
+const DIFFICULTIES = [
+  { value: 1 as const, label: 'Facile', desc: 'Questions accessibles à tous', color: 'text-emerald-600 bg-emerald-50 border-emerald-200 ring-emerald-300' },
+  { value: 2 as const, label: 'Moyen', desc: 'Niveau intermédiaire', color: 'text-amber-600 bg-amber-50 border-amber-200 ring-amber-300' },
+  { value: 3 as const, label: 'Difficile', desc: 'Pour les experts', color: 'text-rose-600 bg-rose-50 border-rose-200 ring-rose-300' },
+];
+
+const QUESTION_COUNTS = [5, 10, 15, 20];
+
+const STYLES = [
+  { id: 'standard', label: 'Standard', desc: 'Questions classiques' },
+  { id: 'anecdote', label: 'Anecdotes', desc: 'Faits surprenants' },
+  { id: 'chiffres', label: 'Chiffres', desc: 'Dates, stats, records' },
+  { id: 'personnalites', label: 'Personnalités', desc: 'Célébrités, œuvres' },
+];
 
 const ANSWER_COLORS: Record<string, string> = {
   A: 'bg-blue-500',
@@ -46,6 +73,8 @@ const DIFFICULTY_BADGE: Record<number, string> = {
   3: 'bg-rose-100 text-rose-700',
 };
 
+const DIFFICULTY_LABEL: Record<number, string> = { 1: 'Facile', 2: 'Moyen', 3: 'Difficile' };
+
 // ---------------------------------------------------------------------------
 // Question preview card
 // ---------------------------------------------------------------------------
@@ -55,10 +84,9 @@ interface QuestionCardProps {
   index: number;
   selected: boolean;
   onToggle: () => void;
-  difficultyLabels: Record<number, string>;
 }
 
-function QuestionCard({ question, index, selected, onToggle, difficultyLabels }: QuestionCardProps) {
+function QuestionCard({ question, index, selected, onToggle }: QuestionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const correct = question.correct_answer;
 
@@ -138,7 +166,7 @@ function QuestionCard({ question, index, selected, onToggle, difficultyLabels }:
         {/* difficulty badge + expand */}
         <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${DIFFICULTY_BADGE[question.difficulty] || DIFFICULTY_BADGE[2]}`}>
-            {difficultyLabels[question.difficulty] || difficultyLabels[2] || 'Medium'}
+            {DIFFICULTY_LABEL[question.difficulty] || 'Moyen'}
           </span>
           <button
             onClick={() => setExpanded((v) => !v)}
@@ -163,12 +191,11 @@ interface SaveModalProps {
   onClose: () => void;
   onSaved: (quiz: Quiz) => void;
   suggestedTheme: string;
-  quizTitlePrefix: string;
 }
 
 type SaveMode = 'new' | 'existing';
 
-function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme, quizTitlePrefix }: SaveModalProps) {
+function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme }: SaveModalProps) {
   const [mode, setMode] = useState<SaveMode>('new');
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -182,7 +209,7 @@ function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme
   useEffect(() => {
     if (open) {
       setMode('new');
-      setNewTitle(`${quizTitlePrefix} — ${suggestedTheme}`);
+      setNewTitle(`Quiz IA — ${suggestedTheme}`);
       setNewDesc('');
       setNewProjectId(projects[0]?.id || '');
       setExistingQuizId('');
@@ -349,33 +376,17 @@ function SaveModal({ open, questions, projects, onClose, onSaved, suggestedTheme
 // ---------------------------------------------------------------------------
 
 export function AIGeneratorPage() {
-  const flags = usePlanFlags();
-  const aiCfg = useAiDefaults();
-  const PRESETS = aiCfg.categories.map((c) => ({ id: c.code, label: c.label, emoji: c.emoji, theme: c.theme, category: c.category }));
-  const DIFFICULTIES = aiCfg.difficultyLevels.map((d, i) => ({
-    value: d.value as 1 | 2 | 3,
-    label: d.label,
-    desc: d.description,
-    color: ['text-emerald-600 bg-emerald-50 border-emerald-200 ring-emerald-300',
-            'text-amber-600 bg-amber-50 border-amber-200 ring-amber-300',
-            'text-rose-600 bg-rose-50 border-rose-200 ring-rose-300'][i] ?? '',
-  }));
-  const QUESTION_COUNTS = aiCfg.questionCounts;
-  const STYLES = aiCfg.questionStyles;
-  const difficultyLabels: Record<number, string> = Object.fromEntries(
-    aiCfg.difficultyLevels.map((d) => [d.value, d.label]),
-  );
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
-  const [selectedPreset, setSelectedPreset] = useState<string>(aiCfg.defaultPreset);
+  // form state
+  const [selectedPreset, setSelectedPreset] = useState<string>('culture');
   const [customTheme, setCustomTheme] = useState('');
   const [useCustomTheme, setUseCustomTheme] = useState(false);
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(aiCfg.defaultDifficulty as 1 | 2 | 3);
-  const [questionCount, setQuestionCount] = useState(aiCfg.defaultQuestionCount);
-  const [language, setLanguage] = useState(aiCfg.defaultLanguage);
-  const [style, setStyle] = useState(aiCfg.defaultStyle);
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
+  const [questionCount, setQuestionCount] = useState(10);
+  const [language, setLanguage] = useState('fr');
+  const [style, setStyle] = useState('standard');
 
   // generation state
   const [generating, setGenerating] = useState(false);
@@ -393,7 +404,7 @@ export function AIGeneratorPage() {
 
   const activePreset = PRESETS.find((p) => p.id === selectedPreset);
   const effectiveTheme = useCustomTheme ? customTheme.trim() : (activePreset?.theme || '');
-  const effectiveCategory = useCustomTheme ? customTheme.trim() : (activePreset?.category || aiCfg.defaultAudience);
+  const effectiveCategory = useCustomTheme ? customTheme.trim() : (activePreset?.category || 'general');
 
   const canGenerate = effectiveTheme.length > 0 && !generating;
 
@@ -410,7 +421,7 @@ export function AIGeneratorPage() {
       difficulty,
       question_count: questionCount,
       language,
-      audience: aiCfg.defaultAudience,
+      audience: 'general',
       style,
     };
 
@@ -439,25 +450,6 @@ export function AIGeneratorPage() {
   const deselectAll = () => setSelectedIds(new Set());
 
   const selectedQuestions = (generatedQuestions ?? []).filter((q) => selectedIds.has(q.id));
-
-  if (!flags.aiEnabled) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-5">
-          <Lock className="w-8 h-8 text-gray-400" />
-        </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">AI Generator</h2>
-        <p className="text-sm text-gray-500 max-w-sm mb-6">
-          AI quiz generation is available on Pro and Premium plans.
-          Upgrade to create quizzes with a single click.
-        </p>
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-semibold rounded-lg opacity-80">
-          <Sparkles className="w-4 h-4" />
-          Upgrade to unlock
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -602,9 +594,12 @@ export function AIGeneratorPage() {
                   onChange={(e) => setLanguage(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {aiCfg.supportedLanguages.map((lang) => (
-                    <option key={lang.code} value={lang.code}>{lang.label}</option>
-                  ))}
+                  <option value="fr">Français</option>
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                  <option value="de">Deutsch</option>
+                  <option value="it">Italiano</option>
+                  <option value="pt">Português</option>
                 </select>
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
@@ -749,7 +744,6 @@ export function AIGeneratorPage() {
                     index={i}
                     selected={selectedIds.has(q.id)}
                     onToggle={() => toggleQuestion(q.id)}
-                    difficultyLabels={difficultyLabels}
                   />
                 ))}
               </div>
@@ -765,7 +759,6 @@ export function AIGeneratorPage() {
         onClose={() => setSaveOpen(false)}
         onSaved={() => {}}
         suggestedTheme={lastTheme}
-        quizTitlePrefix={aiCfg.quizTitlePrefix}
       />
     </div>
   );
